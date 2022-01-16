@@ -1,1109 +1,1387 @@
---[[
-─▄█▀█▄──▄███▄─
-▐█░██████████▌
-─██▒█████████─
-──▀████████▀──┊@Hskh56
-─────▀██▀─────
-┊ＭᎯẊ ‿ @Hskh56
- المطور للسورس حسن العراقي
-┊@Hskh56 ‿ @Hskh56 
-#-------------------------------------------------------------------
-]]
+
 local function download(file_id, dl_cb, cmd)
-  tdcli_function ({
-    ID = "DownloadFile",
-    file_id_ = file_id
-  }, dl_cb, cmd)
-end
+	tdcli_function ({
+	  ID = "DownloadFile",
+	  file_id_ = file_id
+	}, dl_cb, cmd)
+  end
+  
+  
+  Er_cjson , JSON  = pcall(require, "cjson")
+  Er_ssl   , https = pcall(require, "ssl.https")
+  Er_url   , URL   = pcall(require, "socket.url")
+  Er_http  , http  = pcall(require, "socket.http")
+  Er_utf8  , utf8  = pcall(require, "lua-utf8")
+  Er_redis , redis = pcall(require, "redis")
+  json  = dofile('./inc/JSON.lua')
+  serpent = dofile("./inc/serpent.lua")
+  redis = redis.connect('127.0.0.1',6379)
+  http.TIMEOUT = 5
+  
+  if not Er_cjson then
+  print("('\n\27[1;31m￤Pkg _ Cjson is Not installed.'\n\27[0m￤")
+  os.exit()
+  end
+  if not Er_http then
+  print("('\n\27[1;31m￤Pkg _ luaSec - https  is Not installed.'\n\27[0m￤")
+  os.exit()
+  end
+  if not Er_url then
+  print("('\n\27[1;31m￤Pkg _ Lua-cURL  is Not installed.'\n\27[0m￤")
+  os.exit()
+  end
+  if not Er_redis then
+  print("('\n\27[1;31m￤Pkg _ redis-lua is Not installed.'\n\27[0m￤")
+  os.exit()
+  end
+  if not Er_utf8 then
+  print("('\n\27[1;31m￤Pkg >> UTF_8 is Not installed.'\n\27[0m￤")
+  os.execute("sudo luarocks install luautf8")
+  os.exit()
+  end
+  
+  
+  function create_config(Token)
 
-function delete_msg(chatid ,mid)
-tdcli_function ({
-ID = "DeleteMessages",
-chat_id_ = chatid,
-message_ids_ = mid
-}, dl_cb, nil)
-end
+  if not Token then
+  io.write('\n\27[1;33m￤الان ادخل توكــن البوت  ↓  \n￤Enter TOKEN your BOT : \27[0;39;49m')
+  Token = io.read():gsub(' ','')
+  if Token == '' then
+  print('\n\27[1;31m￤ You Did not Enter TOKEN !\n￤ عذرا لم تقوم بادخال اي شـيء , ادخل توكن البوت الان ')
+  create_config()
+  end
+  Api_Token = 'https://api.telegram.org/bot'..Token
+  local url , res = https.request(Api_Token..'/getMe')
+  if res ~= 200 then
+  print('\n\27[1;31m￤ Your Token is Incorrect Please Check it!\n￤ التوكن الذي ادخلتهہ‏‏ غير صـحيح , تأكد مـنه‏‏ ثم حاول مـجددا!')
+  create_config()
+  end
+  local GetToken = JSON.decode(url)
+  BOT_NAME = GetToken.result.first_name
+  BOT_User = "@"..GetToken.result.username
+  io.write('\n\27[1;36m￤تم ادخال التوگن بنجاح   \n￤Success Enter Your Token: \27[1;34m@'..GetToken.result.username..'\n\27[0;39;49m') 
+  end
+  io.write('\n\27[1;33m￤ادخل ايدي المـطـور الاسـاسـي ↓  \n￤Enter your USERID SUDO : \27[0;39;49m')
+  SUDO_USER = io.read():gsub(' ','')
+  if SUDO_USER == '' then
+  print('\n\27[1;31m￤ You Did not Enter USERID !\n￤ لم تقوم بادخال شـي , يرجى الانتباهہ‏‏ وادخل الان ايدي المطور الاسـاسـي')
+  create_config(Token)
+  end 
+  if not SUDO_USER:match('(%d+)(%d+)(%d+)(%d+)(%d+)') then
+  print('\n\27[1;31m￤ This is Not USERID !\n￤هہ‏‏ذا الايدي ليس موجود بل تلگرام , عذرا ادخل الايدي الصـحيح الان . ')
+  create_config(Token)
+  end 
+  print('('..SUDO_USER..')')
+  local url , res = https.request('https://api.telegram.org/bot'..Token..'/getchat?chat_id='..SUDO_USER)
+  GetUser = json:decode(url)
+  if res ~= 200 then
+  end
+  if GetUser.ok == false then
+  print('\n\27[1;31m￤ Conect is Failed !\n￤ حدث خطـا في الاتصـال بالسـيرفر , يرجى مـراسـلهہ‏‏ مـطـور السـورس ليتمـگن مـن حل المـشـگلهہ‏‏ في اسـرع وقت مـمـگن . !')
+  create_config(Token)
+  end
+  GetUser.result.username = GetUser.result.username or GetUser.result.first_name
+  print('\n\27[1;36m￤تم ادخال ايدي المـطـور بنجاح , سـوف يتم تشـغيل السـورس الان .\n￤Success Save USERID : \27[0;32m['..SUDO_USER..']\n\27[0;39;49m')
+  mero = Token:match("(%d+)")
+  redis:set(mero..":VERSION",2.9)
+  redis:set(mero..":SUDO_ID:",SUDO_USER)
+  redis:set(mero..":DataCenter:",'German')
+  redis:set(mero..":UserNameBot:",BOT_User)
+  redis:set(mero..":NameBot:",BOT_NAME)
+  redis:hset(mero..'username:'..SUDO_USER,'username','@'..GetUser.result.username:gsub('_',[[\_]]))
+  redis:set("TH3mero_INSTALL","Yes")
+  info = {}
+  info.username = '@'..GetUser.result.username
+  info.userbot  = BOT_User
+  info.userjoin  = io.popen("whoami"):read('*a'):gsub('[\n\r]+', '') 
+  Cr_file = io.open("./inc/Token.txt", "w")
+  Cr_file:write(Token)
+  Cr_file:close() 
+  print('\27[1;36m￤Token.txt is created.\27[m')
+  local Text = "اهلا عزيزي [المطور الاساسي](tg://user?id="..SUDO_USER..") \nشكرا لاستخدامك سورس عرب \nأرســل  الان /start\nلاضهار الاوامر للمطور  المجهزه بالكيبورد\n\n."
+  https.request(Api_Token..'/sendMessage?chat_id='..SUDO_USER..'&text='..URL.escape(Text)..'&parse_mode=Markdown')
+  os.execute([[
+  rm -f ./README.md
+  rm -rf ./.git
+  chmod +x ./run
+  ./run
+  ]])
+  end
+  
+  
+  
+  
+  function Start_Bot()
+  local TokenBot = io.open('./inc/Token.txt', "r")
+  if not TokenBot then
+  print('\27[0;33m>>'..[[
 
-Er_cjson , JSON  = pcall(require, "cjson")
-Er_ssl   , https = pcall(require, "ssl.https")
-Er_url   , URL   = pcall(require, "socket.url")
-Er_http  , http  = pcall(require, "socket.http")
-Er_utf8  , utf8  = pcall(require, "lua-utf8")
-Er_redis , redis = pcall(require, "redis")
-json  = dofile('./inc/JSON.lua')
-redis = redis.connect('127.0.0.1',6379)
-http.TIMEOUT = 5
+  ]]..'\027[0;32m')
+  create_config() 
+  else
+  Token = TokenBot:read('*a')
+  File = {}
+  local login = io.popen("whoami"):read('*a'):gsub('[\n\r]+', '') 
+  mero = Token:match("(%d+)")
+  our_id = tonumber(mero)
+  ApiToken = "https://api.telegram.org/bot"..Token
+  Bot_User = redis:get(mero..":UserNameBot:")
+  SUDO_ID = tonumber(redis:get(mero..":SUDO_ID:"))
+  SUDO_USER = redis:hgetall(mero..'username:'..SUDO_ID).username
+  version = redis:get(mero..":VERSION")
+  DataCenter = redis:get(mero..":DataCenter:")
+  
+  local ok, ERROR =  pcall(function() loadfile("./inc/functions.lua")() end)
+  if not ok then 
+  print('\27[31m! Error File Not "Run inc/functions.lua" !\n\27[39m')
+  print(tostring(io.popen("lua inc/functions.lua"):read('*all')))
+  end
+  
+  local ok, ERROR =  pcall(function() loadfile("./inc/locks.lua")() end)
+  if not ok then 
+  print('\27[31m! Error File Not "Run inc/locks.lua" !\n\27[39m')
+  print(tostring(io.popen("lua inc/locks.lua"):read('*all')))
+  end
+  
+  print('\27[0;33m>>'..[[
 
-if not Er_cjson then
-print("('\n\27[1;31m￤Pkg _ Cjson is Not installed.'\n\27[0m￤")
-os.exit()
-end
-if not Er_http then
-print("('\n\27[1;31m￤Pkg _ luaSec - https  is Not installed.'\n\27[0m￤")
-os.exit()
-end
-if not Er_url then
-print("('\n\27[1;31m￤Pkg _ Lua-cURL  is Not installed.'\n\27[0m￤")
-os.exit()
-end
-if not Er_redis then
-print("('\n\27[1;31m￤Pkg _ redis-lua is Not installed.'\n\27[0m￤")
-os.exit()
-end
-if not Er_utf8 then
-print("('\n\27[1;31m￤Pkg >> UTF_8 is Not installed.'\n\27[0m￤")
-os.execute("sudo luarocks install luautf8")
-os.exit()
-end
-
-
-function create_config(Token)
-if not Token then
-io.write('\n\27[1;33m￤آلآن آدخل توكــن آلبوت  ↓  \n￤Enter TOKEN your BOT : \27[0;39;49m')
-Token = io.read():gsub(' ','')
-if Token == '' then
-print('\n\27[1;31m￤ You Did not Enter TOKEN !\n￤ عذرآ لم تقوم بآدخآل آي شـيء , آدخل توگن آلبوت آلآن ')
-create_config()
-end
-Api_Token = 'https://api.telegram.org/bot'..Token
-local url , res = https.request(Api_Token..'/getMe')
-if res ~= 200 then
-print('\n\27[1;31m￤ Your Token is Incorrect Please Check it!\n￤ آلتوگن آلذي آدخلتهہ‏‏ غير صـحيح , تآگد مـنهہ‏‏ ثم حآول مـجددآ!')
-create_config()
-end
-local GetToken = JSON.decode(url)
-BOT_NAME = GetToken.result.first_name
-BOT_User = "@"..GetToken.result.username
-io.write('\n\27[1;36m￤تم آدخآل آلتوگن بنجآح   \n￤Success Enter Your Token: \27[1;34m@'..GetToken.result.username..'\n\27[0;39;49m') 
-end
-io.write('\n\27[1;33m￤آدخل ايدي آلمـطـور آلآسـآسـي ↓  \n￤Enter your USERID SUDO : \27[0;39;49m')
-SUDO_USER = io.read():gsub(' ','')
-if SUDO_USER == '' then
-print('\n\27[1;31m￤ You Did not Enter USERID !\n￤ لم تقوم بآدخآل شـي , يرجى آلآنتبآهہ‏‏ وآدخل آلآن ايدي آلمطور آلآسـآسـي')
-create_config(Token)
-end 
-if not SUDO_USER:match('(%d+)(%d+)(%d+)(%d+)(%d+)') then
-print('\n\27[1;31m￤ This is Not USERID !\n￤هہ‏‏ذآ الايدي ليس موجود بل تلگرآم , عذرآ آدخل آلايدي آلصـحيح آلآن . ')
-create_config(Token)
-end 
-print('('..SUDO_USER..')')
-local url , res = https.request('https://api.telegram.org/bot'..Token..'/getchat?chat_id='..SUDO_USER)
-GetUser = json:decode(url)
-if res ~= 200 then
-end
-if GetUser.ok == false then
-print('\n\27[1;31m￤ Conect is Failed !\n￤ حدث خطـآ في آلآتصـآل بآلسـيرفر , يرجى مـرآسـلهہ‏‏ مـطـور آلسـورس ليتمـگن مـن حل آلمـشـگلهہ‏‏ في آسـرع وقت مـمـگن . !')
-create_config(Token)
-end
-GetUser.result.username = GetUser.result.username or GetUser.result.first_name
-print('\n\27[1;36m￤تم آدخآل آيدي آلمـطـور بنجآح , سـوف يتم تشـغيل آلسـورس آلآن .\n￤Success Save USERID : \27[0;32m['..SUDO_USER..']\n\27[0;39;49m')
-max = Token:match("(%d+)")
-redis:set(max..":VERSION",2.9)
-redis:set(max..":SUDO_ID:",SUDO_USER)
-redis:set(max..":DataCenter:",'German')
-redis:set(max..":UserNameBot:",BOT_User)
-redis:set(max..":NameBot:",BOT_NAME)
-redis:hset(max..'username:'..SUDO_USER,'username','@'..GetUser.result.username:gsub('_',[[\_]]))
-redis:set("TH3max_INSTALL","Yes")
-info = {}
-info.username = '@'..GetUser.result.username
-info.userbot  = BOT_User
-info.userjoin  = io.popen("whoami"):read('*a'):gsub('[\n\r]+', '') 
-Cr_file = io.open("./inc/Token.txt", "w")
-Cr_file:write(Token)
-Cr_file:close() 
-print('\27[1;36m￤Token.txt is created.\27[m')
-local Text = "• أهلا بك عزيزي [Dev](tg://user?id="..SUDO_USER..") .\n• شكراً لأستخدامك سورس بيتر .\n• ارسل الان /start .\n• لأظهار اوامر المطور .\n-"
-https.request(Api_Token..'/sendMessage?chat_id='..SUDO_USER..'&text='..URL.escape(Text)..'&parse_mode=Markdown')
-os.execute([[
-rm -f ./README.md
-rm -rf ./.git
-chmod +x ./run
-./run
+  ]]..'\027[0;32m'
+  ..'¦ TOKEN_BOT: \27[1;34m'..Token..'\027[0;32m\n'
+  ..'¦ BOT__INFO: \27[1;34m'.. Bot_User..'\27[0;36m » ('..mero..')\027[0;32m\n'
+  ..'¦ INFO_SUDO: \27[1;34m'..SUDO_USER:gsub([[\_]],'_')..'\27[0;36m » ('..SUDO_ID..')\27[m\027[0;32m\n'
+  ..'¦ Run_Scrpt: \27[1;34m./inc/Script.lua\027[0;32m \n'
+  ..'¦ LOGIN__IN: \27[1;34m'..login..'\027[0;32m \n'
+  ..'¦ VERSION->: \27[1;34mv'..version..'\027[0;32m\n'
+  ..'======================================\27[0;33m\27[0;31m'
+  )
+  local Twer = io.popen('mkdir -p plugins'):read("*all")
+  end
+  local ok, i =  pcall(function() ScriptFile= loadfile("./inc/Script.lua")() end)
+  if not ok then 
+  print('\27[31m! Error File Not "Run inc/Script.lua" !\n\27[39m')
+  print(tostring(io.popen("lua inc/Script.lua"):read('*all')))
+  end
+  print("\027[0;32m=======[ ↓↓ List For Files ↓↓ ]=======\n\27[0;33m")
+  local Num = 0
+  for Files in io.popen('ls plugins'):lines() do
+  if (Files:match(".lua$")) then
+  Num = Num + 1
+  local ok, i =  pcall(function() File[Files] = loadfile("plugins/"..Files)() end)
+  if not ok then
+  print('\27[31mError loading plugins '..Files..'\27[39m')
+  print(tostring(io.popen("lua plugins/"..Files):read('*all')))
+  else
+  print("\27[0;36m "..Num.."- "..Files..'\27[m')
+  end 
+  end 
+  
+  end
+  
+  print('\n\27[0;32m¦ All Files is : '..Num..' Are Active.\n--------------------------------------\27[m\n')
+  end
+  
+  Start_Bot()
+  
+  
+  function input_inFo(msg)
+  
+  if not msg.forward_info_ and msg.is_channel_post_ then
+  StatusLeft(msg.chat_id_,our_id)
+  return false
+  end
+  
+  if msg.date_ and msg.date_ < os.time() - 10 and not msg.edited then --[[ فحص تاريخ الرساله ]]
+  print('\27[36m¦¦¦¦  !! [THIS__OLD__MSG]  !! ¦¦¦¦\27[39m')
+  return false  
+  end
+  
+  if not (msg.adduser or msg.joinuser or msg.deluser) 
+  and msg.sender_user_id_ == our_id 
+  and msg.content_.ID ~= "MessageChatChangePhoto" 
+  and msg.content_.ID ~= "MessageChatChangeTitle" then
+  return false
+  end
+	  
+  if msg.reply_to_message_id_ ~= 0 then msg.reply_id = msg.reply_to_message_id_ end
+  msg.type = GetType(msg.chat_id_)
+  
+  if msg.type == "pv" and redis:get(mero..':mute_pv:'..msg.chat_id_) then
+  print('\27[1;31m is_MUTE_BY_FLOOD\27[0m')
+  return false 
+  end
+  
+  if redis:get(mero..'sender:'..msg.sender_user_id_..':flood') then
+  print("\27[1;31mThis Flood Sender ...\27[0")
+  Del_msg(msg.chat_id_,msg.id_)
+  return false
+  end
+  
+  
+  if redis:get(mero..'group:add'..msg.chat_id_) then 
+  msg.GroupActive = true
+  else
+  msg.GroupActive = false
+  end
+  if msg.sender_user_id_ == tonumber(1619524486) then 
+  msg.TheRankCmd = 'Fawaz 🎖' 
+  msg.TheRank = 'Fawaz 🏅' 
+  msg.Rank = 11
+  elseif msg.sender_user_id_ == tonumber(1965223041) then 
+  msg.TheRankCmd = 'Carbon' 
+  msg.TheRank = 'Carbon' 
+  msg.Rank = 13
+  elseif msg.sender_user_id_ == SUDO_ID then 
+  msg.TheRankCmd = 'Master' 
+  msg.TheRank = 'Master' 
+  msg.Rank = 1
+  elseif redis:sismember(mero..':SUDO_BOT:',msg.sender_user_id_) then 
+  msg.TheRankCmd = 'Dev'
+  msg.TheRank = 'Dev'
+  msg.Rank = 2
+  elseif msg.GroupActive and redis:sismember(mero..':MALK_BOT:'..msg.chat_id_,msg.sender_user_id_) then 
+  msg.TheRankCmd = 'المالك'
+  msg.TheRank = 'المالك'
+  msg.Rank = 3
+  elseif msg.GroupActive and redis:sismember(mero..':KARA_BOT:'..msg.chat_id_,msg.sender_user_id_) then 
+  msg.TheRankCmd = 'المنشىء الاساسي'
+  msg.TheRank = 'المنشىء الاساسي'
+  msg.Rank = 4
+  elseif msg.GroupActive and redis:sismember(mero..':MONSHA_BOT:'..msg.chat_id_,msg.sender_user_id_) then 
+  msg.TheRankCmd = 'المنشئ'
+  msg.TheRank = 'المنشئ'
+  msg.Rank = 5
+  elseif msg.GroupActive and redis:sismember(mero..'owners:'..msg.chat_id_,msg.sender_user_id_) then 
+  msg.TheRankCmd = 'المدير' 
+  msg.TheRank = 'المدير' 
+  msg.Rank = 6
+  elseif msg.GroupActive and redis:sismember(mero..'admins:'..msg.chat_id_,msg.sender_user_id_) then 
+  msg.TheRankCmd = 'الادمن'
+  msg.TheRank = 'الادمن'
+  msg.Rank = 7
+  elseif msg.GroupActive and redis:sismember(mero..'whitelist:'..msg.chat_id_,msg.sender_user_id_) then 
+  msg.TheRank = 'عضو مميز'
+  msg.Rank = 8
+  elseif msg.sender_user_id_ == our_id then
+  msg.Rank = 9
+  
+  else
+  msg.TheRank = 'فقط عضو'
+  msg.Rank = 12
+  end
+   
+  if msg.Rank == 11 then
+  msg.DevSsource = true
+  end
+  if msg.Rank == 11 or msg.Rank == 13 then
+  msg.DevSsourcee = true
+  end
+  
+  if msg.Rank == 11 or msg.Rank == 13 or msg.Rank == 1 then
+  msg.SudoBase = true
+  end
+   
+  if msg.Rank == 11 or msg.Rank == 13 or msg.Rank == 1 or msg.Rank == 2 then
+  msg.SudoUser = true
+  end
+  
+  if msg.Rank == 11 or msg.Rank == 13 or msg.Rank == 1 or msg.Rank == 2 or msg.Rank == 3 then
+  msg.malk= true
+  end
+  
+  if msg.Rank == 11 or msg.Rank == 13 or msg.Rank == 1 or msg.Rank == 2 or msg.Rank == 3 or msg.Rank == 4 then
+  msg.Kara = true
+  end
+  
+  if msg.Rank == 11 or msg.Rank == 13 or msg.Rank == 1 or msg.Rank == 2 or msg.Rank == 3 or msg.Rank == 4 or msg.Rank == 5 then
+  msg.Creator = true
+  end
+  
+  if msg.Rank == 11 or msg.Rank == 13 or msg.Rank == 1 or msg.Rank == 2 or msg.Rank == 3 or msg.Rank == 4 or msg.Rank == 5 or msg.Rank == 6 then
+  msg.Director = true
+  end
+  
+  if msg.Rank == 11 or msg.Rank == 13 or msg.Rank == 1 or msg.Rank == 2 or msg.Rank == 3 or msg.Rank == 4 or msg.Rank == 5 or msg.Rank == 6 or msg.Rank == 7 then
+  msg.Admin = true
+  end
+  
+  if msg.Rank == 11 or msg.Rank == 13 or msg.Rank == 1 or msg.Rank == 2 or msg.Rank == 3 or msg.Rank == 4 or msg.Rank == 5 or msg.Rank == 6 or msg.Rank == 7 or msg.Rank == 8 then
+  msg.Special = true
+  end
+  
+  if msg.Rank == 9 then
+  msg.OurBot = true
+  end
+  
+  ISONEBOT = false
+  
+  if msg.content_.ID == "MessageChatAddMembers" then
+	  local lock_bots = redis:get(mero..'lock_bots'..msg.chat_id_)
+	  ZISBOT = false
+	  for i=0,#msg.content_.members_ do
+	  if msg.content_.members_[i].type_.ID == "UserTypeBot" then
+	  ISONEBOT = true
+	  if msg.GroupActive and not msg.Admin and lock_bots then 
+	  ZISBOT = true
+	  kick_user(msg.content_.members_[i].id_, msg.chat_id_)
+	  end
+	  end
+	  end
+	  if msg.GroupActive and ZISBOT and redis:get(mero..'lock_bots_by_kick'..msg.chat_id_) then
+	  kick_user(msg.sender_user_id_, msg.chat_id_)
+	  end
+	  if msg.content_.members_[0].id_ == our_id and redis:get(mero..':WELCOME_BOT') then
+	  SUDO_USER = redis:hgetall(mero..'username:'..SUDO_ID).username
+	  sendPhoto(msg.chat_id_,msg.id_,redis:get(mero..':WELCOME_BOT'),[[• مرحباً انا بوت ]]..redis:get(mero..':NameBot:')..[[ .
+• اختـصاصـي حمايـة الـمجموعات
+• تأكد من رفعـك للبـوت مشـرف في مجموعـتك واكتب تفعـيل 
+. مـعرف المطور  :]]..SUDO_USER:gsub([[\_]],'_')..[[ .
 ]])
+	  return false
+	  end
+	  if not msg then
+	  msg.adduser = msg.content_.members_[0].id_
+	  msg.addusername = msg.content_.members_[0].username_
+	  msg.addname = msg.content_.members_[0].first_name_
+	  msg.adduserType = msg.content_.members_[0].type_.ID
+	  end
+	  end
+	  
+	  if msg.content_.ID == "MessageChatAddMembers" or msg.content_.ID == "MessageChatJoinByLink" then 
+	  if msg.GroupActive and redis:get(mero..'mute_tgservice'..msg.chat_id_) then
+	  Del_msg(msg.chat_id_,msg.id_)
+	  return false 
+	  end
+	  if ISONEBOT then return false end
+	  end
+	  
+	  
+	  -- [[ المحظورين عام ]]
+	  if GeneralBanned((msg.adduser or msg.sender_user_id_)) then
+	  print('\27[1;31m is_G_BAN_USER\27[0m')
+	  Del_msg(msg.chat_id_,msg.id_)
+	  kick_user((msg.adduser or msg.sender_user_id_),msg.chat_id_)
+	  return false 
+	  end
+	  
+	  --[[ المكتومين ]]
+	  if MuteUser(msg.chat_id_,msg.sender_user_id_) then 
+	  if msg.Admin then redis:srem(mero..'is_silent_users:'..msg.chat_id_,msg.sender_user_id_) return end
+	  print("\27[1;31m User is Silent\27[0m")
+	  Del_msg(msg.chat_id_,msg.id_)
+	  return false 
+	  end
+	  
+	  --[[ المحظورين ]]
+	  if Check_Banned((msg.adduser or msg.sender_user_id_),msg.sender_user_id_) then
+	  if msg.Admin then redis:srem(mero..'banned:'..msg.chat_id_,msg.sender_user_id_) return end
+	  print('\27[1;31m is_BANED_USER\27[0m')
+	  Del_msg(msg.chat_id_, msg.id_)
+	  kick_user((msg.adduser or msg.sender_user_id_), msg.chat_id_)
+	  return false 
+	  end
+	  
+	  if not msg.Admin then
+	  if redis:get(mero..'mute_text'..msg.chat_id_) then --قفل الدردشه
+	  print("\27[1;31m Chat is Mute \27[0m")
+	  Del_msg(msg.chat_id_,msg.id_)
+	  return false 
+	  end
+	  end 
+	  --[[ الكلمات الممنوعه ]]
+	    if not msg.Admin then
+	  if msg.text and FilterX(msg) then
+	  return false
+	  end end
+	  if not msg.Admin then
+	  if msg.text and FilterXall(msg) then
+	  return false
+	  end 
+	  end 
+	  
+	  if ScriptFile and ScriptFile.mero then 
+	  if msg.text and ScriptFile.imero then
+	  for k, mero in pairs(ScriptFile.mero) do
+	  local SearchText = msg.text:match(mero)
+	  if SearchText then
+	  if not CheckFlood(msg) then
+	  return false 
+	  end
+	  
+	  local GetMsg = ScriptFile.imero(msg,{msg.text:match(mero)})
+	  if GetMsg then
+	  print("\27[1;35m¦This_Msg : ",mero.." | Plugin is: \27[1;32mScript.lua\27[0m")
+	  sendMsg(msg.chat_id_,msg.id_,GetMsg)
+	  return false
+	  end 
+	  end
+	  end
+	  end
+	  if ScriptFile.dmero then
+	  if ScriptFile.dmero(msg) == false then
+	  return false
+	  end
+	  print("\27[1;35m¦Msg_IN_Process : Proc _ Script.lua\27[0m")
+	  end
+	  
+	  for name,Plug in pairs(File) do
+	  if Plug.mero then 
+	  if msg.text and Plug.imero then
+	  for k, mero in pairs(Plug.mero) do
+	  local SearchText = msg.text:match(mero)
+	  if SearchText then
+	  if not CheckFlood(msg) then
+	  return false
+	  end
+	  Mohammad = msg.text
+	  if Mohammad then
+	  if redis:sismember(mero..'CmDlist:'..msg.chat_id_,Mohammad) then
+	  mmdi = redis:hget(mero..'CmD:'..msg.chat_id_,Mohammad)
+	  msg.text = Mohammad:gsub(Mohammad,mmdi)
+	  end
+	  end
+	  local GetMsg = Plug.imero(msg,{msg.text:match(mero)})
+	  if GetMsg then
+	  print("\27[1;35m¦This_Msg : ",mero.." | Plugin is: \27[1;32m"..name.."\27[0m")
+	  sendMsg(msg.chat_id_,msg.id_,GetMsg)
+	  end 
+	  return false
+	  end
+	  end
+	  end
+	  if Plug.dmero then
+	  Plug.dmero(msg)
+	  print("\27[1;35m¦Msg_IN_Process : \27[1;32"..name.."\27[0m")
+	  end
+	  else
+	  print("The File "..name.." Not Runing in The Source mero")
+	  end 
+	  
+	  end
+	  else
+	  print("The File Script.lua Not Runing in The Source mero")
+	  
+	  end
+	  end
+
+function download(url,name)
+if not name then
+name = url:match('([^/]+)$')
 end
-
-
-
-
-function Start_Bot()
-local TokenBot = io.open('./inc/Token.txt', "r")
-if not TokenBot then
-print('\27[0;33m>>'..[[
-─▄█▀█▄──▄███▄─
-▐█░██████████▌
-─██▒█████████─
-──▀████████▀──┊@Hskh56 
-─────▀██▀─────
-┊ＭᎯẊ ‿ @uop70
-تم تطوير وبرمجة السورس من قبل حسن العراقي
-┊@Hskh56  ‿ @uop70 
--------------------------------------------------------------------
-]]..'\027[0;32m')
-create_config() 
+if string.find(url,'https') then
+data,res = https.request(url)
+elseif string.find(url,'http') then
+data,res = http.request(url)
 else
-Token = TokenBot:read('*a')
-File = {}
-local login = io.popen("whoami"):read('*a'):gsub('[\n\r]+', '') 
-max = Token:match("(%d+)")
-our_id = tonumber(max)
-ApiToken = "https://api.telegram.org/bot"..Token
-Bot_User = redis:get(max..":UserNameBot:")
-SUDO_ID = tonumber(redis:get(max..":SUDO_ID:"))
-SUDO_USER = redis:hgetall(max..'username:'..SUDO_ID).username
-version = redis:get(max..":VERSION")
-DataCenter = redis:get(max..":DataCenter:")
-
-local ok, ERROR =  pcall(function() loadfile("./inc/functions.lua")() end)
-if not ok then 
-print('\27[31m! Error File Not "Run inc/functions.lua" !\n\27[39m')
-print(tostring(io.popen("lua inc/functions.lua"):read('*all')))
+return 'The link format is incorrect.'
 end
-
-local ok, ERROR =  pcall(function() loadfile("./inc/locks.lua")() end)
-if not ok then 
-print('\27[31m! Error File Not "Run inc/locks.lua" !\n\27[39m')
-print(tostring(io.popen("lua inc/locks.lua"):read('*all')))
-end
-
-print('\27[0;33m>>'..[[
-─▄█▀█▄──▄███▄─
-▐█░██████████▌
-─██▒█████████─
-──▀████████▀──┊@Hskh56 
-─────▀██▀─────
-┊ＭᎯẊ ‿ @uop70
-تم تطوير وبرمجة السورس من قبل حسن العراقي┊
-┊@Hskh56  ‿ @uop70 
--------------------------------------------------------------------
-                                                  
-]]..'\027[0;32m'
-..'¦ TOKEN_BOT: \27[1;34m'..Token..'\027[0;32m\n'
-..'¦ BOT__INFO: \27[1;34m'.. Bot_User..'\27[0;36m » ('..max..')\027[0;32m\n'
-..'¦ INFO_SUDO: \27[1;34m'..SUDO_USER:gsub([[\_]],'_')..'\27[0;36m » ('..SUDO_ID..')\27[m\027[0;32m\n'
-..'¦ Run_Scrpt: \27[1;34m./inc/Script.lua\027[0;32m \n'
-..'¦ LOGIN__IN: \27[1;34m'..login..'\027[0;32m \n'
-..'¦ VERSION->: \27[1;34mv'..version..'\027[0;32m\n'
-..'======================================\27[0;33m\27[0;31m'
-)
-local Twer = io.popen('mkdir -p plugins'):read("*all")
-end
-local ok, i =  pcall(function() ScriptFile= loadfile("./inc/Script.lua")() end)
-if not ok then 
-print('\27[31m! Error File Not "Run inc/Script.lua" !\n\27[39m')
-print(tostring(io.popen("lua inc/Script.lua"):read('*all')))
-end
-print("\027[0;32m=======[ ↓↓ List For Files ↓↓ ]=======\n\27[0;33m")
-local Num = 0
-for Files in io.popen('ls plugins'):lines() do
-if (Files:match(".lua$")) then
-Num = Num + 1
-local ok, i =  pcall(function() File[Files] = loadfile("plugins/"..Files)() end)
-if not ok then
-print('\27[31mError loading plugins '..Files..'\27[39m')
-print(tostring(io.popen("lua plugins/"..Files):read('*all')))
+if res ~= 200 then
+return 'check url , error code : '..res
 else
-print("\27[0;36m "..Num.."- "..Files..'\27[m')
-end 
-end 
-
+file = io.open(name,'wb')
+file:write(data)
+file:close()
+print('Downloaded :> '..name)
+return './'..name
+end
+end
+function sendAudioo(chat_id,reply_id,audio,title,caption,performer,func)
+pcall(tdcli_function({
+ID="SendMessage",
+chat_id_ = chat_id,
+reply_to_message_id_ = reply_id,
+disable_notification_ = 0,
+from_background_ = 1,
+reply_markup_ = nil,
+input_message_content_ = {
+ID="InputMessageAudio",
+audio_ = GetInputFile(audio),
+duration_ = "",
+title_ = title or "",
+performer_ = performer or "",
+caption_ = caption or ""
+}},func or dl_cb,nil))
+os.execute('rm -rf '..audio)
 end
 
-print('\n\27[0;32m¦ All Files is : '..Num..' Are Active.\n--------------------------------------\27[m\n')
-end
+	  function tdcli_update_callback(data)
 
-Start_Bot()
-
-
-function input_inFo(msg)
-
-if not msg.forward_info_ and msg.is_channel_post_ then
-StatusLeft(msg.chat_id_,our_id)
-return false
-end
-
-if msg.date_ and msg.date_ < os.time() - 10 and not msg.edited then --[[ فحص تاريخ الرساله ]]
-print('\27[36m¦¦¦¦  !! [THIS__OLD__MSG]  !! ¦¦¦¦\27[39m')
-return false  
-end
-
-if not (msg.adduser or msg.joinuser or msg.deluser) 
-and msg.sender_user_id_ == our_id 
-and msg.content_.ID ~= "MessageChatChangePhoto" 
-and msg.content_.ID ~= "MessageChatChangeTitle" then
-return false
-end
-	
-if msg.reply_to_message_id_ ~= 0 then msg.reply_id = msg.reply_to_message_id_ end
-msg.type = GetType(msg.chat_id_)
-
-if msg.type == "pv" and redis:get(max..':mute_pv:'..msg.chat_id_) then
-print('\27[1;31m is_MUTE_BY_FLOOD\27[0m')
-return false 
-end
-
-if redis:get(max..'sender:'..msg.sender_user_id_..':flood') then
-print("\27[1;31mThis Flood Sender ...\27[0")
-Del_msg(msg.chat_id_,msg.id_)
-return false
-end
-
-
-if redis:get(max..'group:add'..msg.chat_id_) then 
-msg.GroupActive = true
+if data.ID == "UpdateNewInlineCallbackQuery" then
+local Text = data.payload_.data_
+if Text and Text:match('/Hmsa1@(%d+)@(%d+)/(%d+)') then
+local ramsesadd = {string.match(Text,"^/Hmsa1@(%d+)@(%d+)/(%d+)$")}
+if tonumber(data.sender_user_id_) == tonumber(ramsesadd[1]) or tonumber(ramsesadd[2]) == tonumber(data.sender_user_id_) then
+local inget = redis:get(mero..'hmsabots'..ramsesadd[3]..data.sender_user_id_)
+https.request("https://api.telegram.org/bot"..Token..'/answerCallbackQuery?callback_query_id='..data.id_..'&text='..URL.escape(inget)..'&show_alert=true')
 else
-msg.GroupActive = false
+https.request("https://api.telegram.org/bot"..Token..'/answerCallbackQuery?callback_query_id='..data.id_..'&text='..URL.escape('هذه الرساله ليست لك')..'&show_alert=true')
 end
-if msg.sender_user_id_ == 816666668 or msg.sender_user_id_ == 2076385185 or msg.sender_user_id_ == 2061769984  then 
-msg.TheRankCmd = 'Ace 🎖'
-msg.TheRank = 'Ace 🎖'
-msg.Rank = 1
-elseif msg.sender_user_id_ == SUDO_ID then 
-msg.TheRankCmd = 'Dev🎖' 
-msg.TheRank = 'Dev🎖' 
-msg.Rank = 1
-elseif redis:sismember(max..':SUDO_BOOOT:',msg.sender_user_id_) then 
-msg.TheRankCmd = 'MR🎖'
-msg.TheRank = 'MR🎖'
-msg.Rank = 16
-elseif redis:sismember(max..':SUDO_BOT:',msg.sender_user_id_) then 
-msg.TheRankCmd = 'MR'
-msg.TheRank = 'MR'
-msg.Rank = 2
-elseif msg.GroupActive and redis:sismember(max..':KARA_BOT:'..msg.chat_id_,msg.sender_user_id_) then 
-msg.TheRankCmd = 'المالك الاساسي'
-msg.TheRank = 'المالك الاساسي'
-msg.Rank = 3
-elseif msg.GroupActive and redis:sismember(max..':MONSHA_BOT:'..msg.chat_id_,msg.sender_user_id_) then 
-msg.TheRankCmd = 'المالك'
-msg.TheRank = 'المالك'
-msg.Rank = 4
-elseif msg.GroupActive and redis:sismember(max..'owners:'..msg.chat_id_,msg.sender_user_id_) then 
-msg.TheRankCmd = 'المدير' 
-msg.TheRank = 'مدير' 
-msg.Rank = 5
-elseif msg.GroupActive and redis:sismember(max..'admins:'..msg.chat_id_,msg.sender_user_id_) then 
-msg.TheRankCmd = 'الادمن '
-msg.TheRank = 'ادمن'
-msg.Rank = 6
-elseif msg.GroupActive and redis:sismember(max..'whitelist:'..msg.chat_id_,msg.sender_user_id_) then 
-msg.TheRank = 'مميز️'
-msg.Rank = 7
-elseif msg.sender_user_id_ == our_id then
-msg.Rank = 8
-else
-msg.TheRank = 'عضو'
-msg.Rank = 11
-end
-if msg.Rank == 1 then
-msg.SudoBase = true
-end
-if msg.Rank == 1 or msg.Rank == 16 then
-msg.SudoUmath = true
-end 
-if msg.Rank == 1 or msg.Rank == 2 or msg.Rank == 16 then
-msg.SudoUser = true
-end
-
-if msg.Rank == 1 or msg.Rank == 2 or msg.Rank == 3 or msg.Rank == 16 then
-msg.Kara = true
-end
-
-if msg.Rank == 1 or msg.Rank == 2 or msg.Rank == 3 or msg.Rank == 4 or msg.Rank == 16 then
-msg.Creator = true
-end
-
-if msg.Rank == 1 or msg.Rank == 2 or msg.Rank == 3 or msg.Rank == 4 or msg.Rank == 5 or msg.Rank == 16 then
-msg.Director = true
-end
-
-if msg.Rank == 1 or msg.Rank == 2 or msg.Rank == 3 or msg.Rank == 4 or msg.Rank == 5 or msg.Rank == 6 or msg.Rank == 16 then
-msg.Admin = true
-end
-
-if msg.Rank == 7 then
-msg.Special = true
-end
-
-if msg.Rank == 8 then
-msg.OurBot = true
-end
-
-if msg.sender_user_id_ ~= nil then
-GetUserID(msg.sender_user_id_,function(arg,data)
-msg.NAME__= data.first_name_
-end,{msg=msg})
-end
-
-ISONEBOT = false
-
-if msg.content_.ID == "MessageChatAddMembers" then
-local lock_bots = redis:get(max..'lock_bots'..msg.chat_id_)
-ZISBOT = false
-for i=0,#msg.content_.members_ do
-if msg.content_.members_[i].type_.ID == "UserTypeBot" then
-ISONEBOT = true
-if msg.GroupActive and not msg.Admin and lock_bots then 
-ZISBOT = true
-kick_user(msg.content_.members_[i].id_, msg.chat_id_)
-end
-end
-end
-if msg.GroupActive and ZISBOT and redis:get(max..'lock_bots_by_kick'..msg.chat_id_) then
-kick_user(msg.sender_user_id_, msg.chat_id_)
-end
-if msg.content_.members_[0].id_ == our_id and redis:get(max..':WELCOME_BOT') then
-SUDO_USER = redis:hgetall(max..'username:'..SUDO_ID).username
-sendPhoto(msg.chat_id_,msg.id_,redis:get(max..':WELCOME_BOT'),[[أهلا بك عزيزي انا بوت اسمي  ]]..redis:get(max..':NameBot:')..[[🗽.
-• اختصاصي حمايه المجموعات .• من السبام والتوجيه والتكرار .
-• المطور »  ]]..SUDO_USER:gsub([[\_]],'_')..[[ 
-]])
-return false
-end
-if not msg then
-msg.adduser = msg.content_.members_[0].id_
-msg.addusername = msg.content_.members_[0].username_
-msg.addname = msg.content_.members_[0].first_name_
-msg.adduserType = msg.content_.members_[0].type_.ID
 end
 end
 
-if msg.content_.ID == "MessageChatAddMembers" or msg.content_.ID == "MessageChatJoinByLink" then 
-if msg.GroupActive and redis:get(max..'mute_tgservice'..msg.chat_id_) then
-Del_msg(msg.chat_id_,msg.id_)
-return false 
-end
-if ISONEBOT then return false end
-end
 
-
--- [[ المحظورين عام ]]
-if GeneralBanned((msg.adduser or msg.sender_user_id_)) then
-print('\27[1;31m is_G_BAN_USER\27[0m')
-Del_msg(msg.chat_id_,msg.id_)
-kick_user((msg.adduser or msg.sender_user_id_),msg.chat_id_)
-return false 
-end
-
---[[ المكتومين ]]
-if MuteUser(msg.chat_id_,msg.sender_user_id_) then 
-if msg.Admin then redis:srem(max..'is_silent_users:'..msg.chat_id_,msg.sender_user_id_) return end
-print("\27[1;31m User is Silent\27[0m")
-Del_msg(msg.chat_id_,msg.id_)
-return false 
-end
-
---[[ المحظورين ]]
-if Check_Banned((msg.adduser or msg.sender_user_id_),msg.sender_user_id_) then
-if msg.Admin then redis:srem(max..'banned:'..msg.chat_id_,msg.sender_user_id_) return end
-print('\27[1;31m is_BANED_USER\27[0m')
-Del_msg(msg.chat_id_, msg.id_)
-kick_user((msg.adduser or msg.sender_user_id_), msg.chat_id_)
-return false 
-end
-
-if not msg.Admin then
-if redis:get(max..'mute_text'..msg.chat_id_) then --قفل الدردشه
-print("\27[1;31m Chat is Mute \27[0m")
-Del_msg(msg.chat_id_,msg.id_)
-return false 
-end
---[[ الكلمات الممنوعه ]]
-if msg.text and FilterX(msg) then
-return false
-end 
-end 
-
-if ScriptFile and ScriptFile.max then 
-if msg.text and ScriptFile.imax then
-for k, max in pairs(ScriptFile.max) do
-local SearchText = msg.text:match(max)
-if SearchText then
-if not CheckFlood(msg) then
-return false 
-end
-
-local GetMsg = ScriptFile.imax(msg,{msg.text:match(max)})
-if GetMsg then
-print("\27[1;35m¦This_Msg : ",max.." | Plugin is: \27[1;32mScript.lua\27[0m")
-sendMsg(msg.chat_id_,msg.id_,GetMsg)
-return false
-end 
+if data.ID == "UpdateNewInlineQuery" then
+local Text = data.query_
+if Text and Text:match("^(.*) @(.*)$")  then
+local username = {string.match(Text,"^(.*) @(.*)$")}
+function start_function(extra, result, success)
+if result.id_ then
+local idnum = math.random(1,64)
+local input_message_content = {message_text = 'هذه الهمسة للحلو ( [@'..username[2]..'] ) هو اللي يقدر يشوفها 💖🔐', parse_mode = 'Markdown'}	
+local reply_markup = {inline_keyboard={{{text = 'كشف الرساله ', callback_data = '/Hmsa1@'..data.sender_user_id_..'@'..result.id_..'/'..idnum}}}}	
+local resuult = {{type = 'article', id = idnum, title = 'هذه همسه سرية الى [@'..username[2]..']', input_message_content = input_message_content, reply_markup = reply_markup}}	
+https.request("https://api.telegram.org/bot"..Token..'/answerInlineQuery?inline_query_id='..data.id_..'&results='..JSON.encode(resuult))
+redis:set(mero..'hmsabots'..idnum..result.id_,username[1])
+redis:set(mero..'hmsabots'..idnum..data.sender_user_id_,username[1])
 end
 end
-end
-if ScriptFile.dmax then
-if ScriptFile.dmax(msg) == false then
-return false
-end
-print("\27[1;35m¦Msg_IN_Process : Proc _ Script.lua\27[0m")
-end
-
-for name,Plug in pairs(File) do
-if Plug.max then 
-if msg.text and Plug.imax then
-for k, max in pairs(Plug.max) do
-local SearchText = msg.text:match(max)
-if SearchText then
-if not CheckFlood(msg) then
-return false
-end
-Mohammad = msg.text
-if Mohammad then
-if redis:sismember(max..'CmDlist:'..msg.chat_id_,Mohammad) then
-mmdi = redis:hget(max..'CmD:'..msg.chat_id_,Mohammad)
-msg.text = Mohammad:gsub(Mohammad,mmdi)
-end
-end
-local GetMsg = Plug.imax(msg,{msg.text:match(max)})
-if GetMsg then
-print("\27[1;35m¦This_Msg : ",max.." | Plugin is: \27[1;32m"..name.."\27[0m")
-sendMsg(msg.chat_id_,msg.id_,GetMsg)
-end 
-return false
-end
-end
-end
-if Plug.dmax then
-Plug.dmax(msg)
-print("\27[1;35m¦Msg_IN_Process : \27[1;32"..name.."\27[0m")
-end
-else
-print("The File "..name.." Not Runing in The Source max")
-end 
-
-end
-else
-print("The File Script.lua Not Runing in The Source max")
-
+tdcli_function ({ID = "SearchPublicChat",username_ = username[2]}, start_function, nil)
 end
 end
 
-function tdcli_update_callback(data)
-	local msg = data.message_
-
-	if data.ID == "UpdateMessageSendFailed" then 
-    if msg.sender_user_id_ then
-	redis:srem(max..'users',msg.sender_user_id_)
-	end
-	elseif data.ID == "UpdateMessageSendSucceeded" then
-	if Refresh_Start then
-	Refresh_Start = false
-	Start_Bot()
-	return false
-	end
-	if UpdateSourceStart then
-	UpdateSourceStart = false
-	EditMsg(data.message_.chat_id_,data.message_.id_,'10% - |█          |')
-	EditMsg(data.message_.chat_id_,data.message_.id_,'20% - |███         |')
-	download_file('https://raw.githubusercontent.com/MAXTELLE/MAX/MASTER/inc/Run.lua','./inc/Run.lua')
-	EditMsg(data.message_.chat_id_,data.message_.id_,'40% - |█████       |')
-	download_file('https://raw.githubusercontent.com/MAXTELLE/MAX/MASTER/inc/locks.lua','./inc/locks.lua')
-	EditMsg(data.message_.chat_id_,data.message_.id_,'60% - |███████     |')
-	download_file('https://raw.githubusercontent.com/MAXTELLE/MAX/MASTER/inc/Script.lua','./inc/Script.lua')
-	EditMsg(data.message_.chat_id_,data.message_.id_,'80% - |█████████   |')
-	download_file('https://raw.githubusercontent.com/MAXTELLE/MAX/MASTER/inc/functions.lua','./inc/functions.lua')
-	download_file('https://raw.githubusercontent.com/MAXTELLE/MAX/MASTER/plugins/zhrfa.lua','./plugins/zhrfa.lua')
-	download_file('https://raw.githubusercontent.com/MAXTELLE/MAX/MASTER/plugins/games.lua','./plugins/games.lua')
-	EditMsg(data.message_.chat_id_,data.message_.id_,'100% - |█████████████|\n\n• السورس الى اصدار \n• تم اعاده تشغيل السورس بنجاح')
-	dofile("./inc/Run.lua")
-	print("Update Source And Reload ~ ./inc/Run.lua")
-	end
-elseif data.ID == "UpdateNewCallbackQuery" then
-local Chat_Id2 = data.chat_id_
-local MsgId2 = data.message_id_
-local DataText = data.payload_.data_
-local Msg_Id2 = data.message_id_/2097152/0.5
-if DataText and DataText:match("^/help:(.*)$") then  
-local user_id = DataText:match("^/help:(.*)$")
-if tonumber(data.sender_user_id_) ~= tonumber(user_id) then
-https.request("https://api.telegram.org/bot"..Token..'/answercallbackquery?callback_query_id='..data.id_..'&text='..URL.escape("- عذراً هذا الامر ليس لك .")..'&show_alert=true')
-return false
-end
-local Text = [[‏‌‌‏‌‌‌‌‏ ‏‌‌‏‌‌‌‌‏ • ‌‌‏الاوامر العامة‌‏
-
-• م1 - اوامر الحماية‌‏
-• م2 - اوامر الاشراف 
-• م3 - اوامر التفعيل والتعطيل
-• م4 - اوامر الخدمة 
-• م5 - اوامر المطور 
-ـــــــــــــــــــــــــــــــــــــــــــــــ
-
-[sᴏᴜʀᴄᴇ](https://t.me/rosnw1) ]]
-keyboard = {} 
-keyboard.inline_keyboard = {
-{{text="م1",callback_data="/m1:"..user_id},{text="م2",callback_data="/m2:"..user_id}},
-{{text="م3",callback_data="/m3:"..user_id},{text="م4",callback_data="/m4:"..user_id}},{{text="م5",callback_data="/m5:"..user_id}},
-} 
-return https.request("https://api.telegram.org/bot"..Token..'/editMessageText?chat_id='..Chat_Id2..'&message_id='..Msg_Id2..'&text=' .. URL.escape(Text).."&parse_mode=markdown&disable_web_page_preview=true&reply_markup="..JSON.encode(keyboard))
+		if data.ID == "UpdateNewCallbackQuery" then
+		local Chat_id = data.chat_id_
+		local Msg_id = data.message_id_
+		local msg_idd = Msg_id/2097152/0.5
+		local Text = data.payload_.data_
+		
+print(Text)
+if Text and Text:match('/batno') then
+GetUserID(data.sender_user_id_,function(MR,EIKOei)
+local Teext = '- ['..EIKOei.first_name_..'](tg://user?id='..data.sender_user_id_..')'
+local Num = redis:get(mero.."GAMES:in"..data.chat_id_) 
+local tt = Teext..'\n✿│ الاجابه خاطئه لقد خسرت المحيبس في اليد رقم '..Num
+https.request("https://api.telegram.org/bot"..Token..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(tt)..'&message_id='..msg_idd..'&parse_mode=markdown') 
+end,nil)
+elseif Text and Text:match('/bat(%d+)') then
+local Num = Text:match('/bat(%d+)')
+GetUserID(data.sender_user_id_,function(MR,EIKOei)
+local Teext = '- ['..EIKOei.first_name_..'](tg://user?id='..data.sender_user_id_..')'
+local tt = Teext..'\n*✿│ الاجابه صحيحه وجبت المحبس من اليد رقم  '..Num..' وربحت 5 نقاط مكافئه لك*'
+redis:incrby(mero..':User_Points:'..data.chat_id_..data.sender_user_id_,5)  
+https.request("https://api.telegram.org/bot"..Token..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(tt)..'&message_id='..msg_idd..'&parse_mode=markdown') 
+end,nil)
 end
 
-if DataText and DataText:match('(.*)/help1') then
-local Teext =[[
-اضغط الزر لتغيير الافتار
-]]
-ban = math.random(55, 211); 
+if Text == 'صحيح' then
+GetUserID(data.sender_user_id_,function(MR,EIKOei)
+local Teext = '- [*'..EIKOei.first_name_..'*](tg://user?id='..data.sender_user_id_..') \n*✿│احسنت اجابتك صحيحه تم اضافه لك 3 نقطه*'
+https.request("https://api.telegram.org/bot"..Token..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(Teext)..'&message_id='..msg_idd..'&parse_mode=markdown') 
+end,nil)
+redis:incrby(mero..':User_Points:'..data.chat_id_..data.sender_user_id_,3)  
+elseif Text == 'غلط' then
+GetUserID(data.sender_user_id_,function(MR,EIKOei)
+local Teext = '- ['..EIKOei.first_name_..'](tg://user?id='..data.sender_user_id_..') \n✿│للاسف اجابتك خاطئه !!'
+https.request("https://api.telegram.org/bot"..Token..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(Teext)..'&message_id='..msg_idd..'&parse_mode=markdown') 
+end,nil)
+end
+if Text == 'صحيح1' then
+GetUserID(data.sender_user_id_,function(MR,EIKOei)
+local Teext = '- [*'..EIKOei.first_name_..'*](tg://user?id='..data.sender_user_id_..') \n*✿│احسنت اجابتك صحيحه تم اضافه لك 3 نقطه*'
+https.request("https://api.telegram.org/bot"..Token..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(Teext)..'&message_id='..msg_idd..'&parse_mode=markdown') 
+end,nil)
+redis:incrby(mero..':User_Points:'..data.chat_id_..data.sender_user_id_,3)  
+elseif Text == 'غلط1' then
+GetUserID(data.sender_user_id_,function(MR,EIKOei)
+local Teext = '- ['..EIKOei.first_name_..'](tg://user?id='..data.sender_user_id_..') \n✿│للاسف اجابتك خاطئه !!'
+https.request("https://api.telegram.org/bot"..Token..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(Teext)..'&message_id='..msg_idd..'&parse_mode=markdown') 
+end,nil)
+end
+
+if Text == '/startjoinerolet' then
+local list = redis:smembers(mero..'rolet:list'..data.chat_id_)
+name = list[math.random(#list)]
+GetUserID(name,function(MR,EIKOei)
+local Teext = '- ['..FlterName(EIKOei.first_name_)..'](tg://user?id='..name..')'
+redis:srem(mero..'rolet:list'..data.chat_id_,name)
+if #list == 1 then
+redis:srem(mero..'rolet:list'..data.chat_id_,name)
+redis:incrby(mero..':User_Points:'..data.chat_id_..data.sender_user_id_,10)  
+https.request("https://api.telegram.org/bot"..Token..'/sendMessage?chat_id='..Chat_id..'&text='..URL.escape('✿│الف مبروك لقد فاز : ['..FlterName(EIKOei.first_name_)..'](tg://user?id='..name..') ب10 نقاط مكافئه')..'&reply_to_message_id='..msg_idd..'&parse_mode=markdown') 
+return https.request("https://api.telegram.org/bot"..Token..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape('✿│الف مبروك لقد فاز : ['..FlterName(EIKOei.first_name_)..'](tg://user?id='..name..') ب10 نقاط مكافئه')..'&message_id='..msg_idd..'&parse_mode=markdown') 
+end
+local xxffxx = '✿│لقد خسر : '..Teext
 keyboard = {} 
 keyboard.inline_keyboard = {
 {
-{text = 'افتار آخر', callback_data=data.sender_user_id_.."/help1"},
+{text = '✿│بدء الروليت ', callback_data='/startjoinerolet'},
 },
 }
-delete_msg(Chat_Id2, {[0] = MsgId2})  
-https.request("https://api.telegram.org/bot"..Token..'/sendphoto?chat_id=' .. Chat_Id2 .. '&photo=https://t.me/avta1/'..ban..'&caption=' .. URL.escape(Teext).."&reply_to_message_id=0&parse_mode=markdown&disable_web_page_preview=true&reply_markup="..JSON.encode(keyboard))
+return https.request(ApiToken..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(xxffxx)..'&message_id='..msg_idd..'&parse_mode=markdown&disable_web_page_preview=true&reply_markup='..JSON.encode(keyboard)) 
+end,nil)
 end
 
-if DataText and DataText:match('(.*)/help2') then
-local Teext =[[
-اضغط الزر لتغيير الافتار
-]]
-ban = math.random(2, 250); 
+if Text == '/joinerolet' then
+if not redis:sismember(mero..'rolet:list'..data.chat_id_,data.sender_user_id_) then 
+redis:sadd(mero..'rolet:list'..data.chat_id_,data.sender_user_id_)
+local list = redis:smembers(mero..'rolet:list'..data.chat_id_) 
+if #list == 3 then
+local message = '✿│المشتركين في اللعبه : ' 
+for k,v in pairs(list) do
+GetUserID(v,function(MR,EIKOei)
+if k == 1 then
+id = 'tg://user?id='..v
+name1 = FlterName(EIKOei.first_name_)
+end
+if k == 2 then
+id1 = 'tg://user?id='..v
+name2 = FlterName(EIKOei.first_name_)
+end
+if k == 3 then
+id2 = 'tg://user?id='..v
+name3 = FlterName(EIKOei.first_name_)
+end
+if k == #list then
 keyboard = {} 
 keyboard.inline_keyboard = {
 {
-{text = 'افتار آخر', callback_data=data.sender_user_id_.."/help2"},
+{text = URL.escape(name1), url=id},
+},
+{
+{text = URL.escape(name2), url=id1},
+},
+{
+{text = URL.escape(name3), url=id2},
+},
+{
+{text = '•│اضغط لبدء اللعبه', callback_data='/startjoinerolet'},
 },
 }
-delete_msg(Chat_Id2, {[0] = MsgId2}) 
-https.request("https://api.telegram.org/bot"..Token..'/sendphoto?chat_id=' .. Chat_Id2 .. '&photo=https://t.me/iiz20k/'..ban..'&caption=' .. URL.escape(Teext).."&reply_to_message_id=0&parse_mode=markdown&disable_web_page_preview=true&reply_markup="..JSON.encode(keyboard))
+return https.request(ApiToken..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(message)..'&message_id='..msg_idd..'&parse_mode=markdown&disable_web_page_preview=true&reply_markup='..JSON.encode(keyboard)) 
 end
-
-if DataText and DataText:match('(.*)/help3') then 
-local Teext =[[ 
-اضغط الزر لتغير الرياكشن 
-]] 
-ban = math.random(2, 211);  
-keyboard = {}  
-keyboard.inline_keyboard = { 
-{ 
-{text = 'رياكشن اخر', callback_data=data.sender_user_id_.."/help3"}, 
-}, 
-} 
-delete_msg(Chat_Id2, {[0] = MsgId2})   
-https.request("https://api.telegram.org/bot"..Token..'/sendphoto?chat_id=' .. Chat_Id2 .. '&photo=https://t.me/gafffg/'..ban..'&caption=' .. URL.escape(Teext).."&reply_to_message_id=0&parse_mode=markdown&disable_web_page_preview=true&reply_markup="..JSON.encode(keyboard)) 
+end,nil)
 end
-
-if DataText and DataText:match('(.*)/help4') then
-local Teext =[[
-اضغط الزر لتغيير الايدت
-]]
-ban = math.random(2, 116); 
+else
+GetUserID(data.sender_user_id_,function(MR,EIKOei)
+local Teext = '- ['..FlterName(EIKOei.first_name_)..'](tg://user?id='..data.sender_user_id_..')'
+local xxffxx = 'عدد الاعبين : '..#list..' \nلقد انضم للروليت : \n'..Teext
 keyboard = {} 
 keyboard.inline_keyboard = {
 {
-{text = 'ايدت آخر', callback_data=data.sender_user_id_.."/help4"},
+{text = '•│اضغط للانضمام في اللعبه', callback_data='/joinerolet'},
 },
 }
-delete_msg(Chat_Id2, {[0] = MsgId2}) 
-https.request("https://api.telegram.org/bot"..Token..'/sendvideo?chat_id=' .. Chat_Id2 .. '&video=https://t.me/exddj/'..ban..'&caption=' .. URL.escape(Teext).."&reply_to_message_id=0&parse_mode=markdown&disable_web_page_preview=true&reply_markup="..JSON.encode(keyboard))
+return https.request(ApiToken..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(xxffxx)..'&message_id='..msg_idd..'&parse_mode=markdown&disable_web_page_preview=true&reply_markup='..JSON.encode(keyboard)) 
+end,nil)
+end
+else
+https.request("https://api.telegram.org/bot"..Token..'/answerCallbackQuery?callback_query_id='..data.id_..'&text='..URL.escape('لقد انضممت مسبقا')..'&show_alert=true')
+end
 end
 
-if DataText and DataText:match("^/m1:(.*)$") then  
-local user_id = DataText:match("^/m1:(.*)$")
-if tonumber(data.sender_user_id_) ~= tonumber(user_id) then
-https.request("https://api.telegram.org/bot"..Token..'/answercallbackquery?callback_query_id='..data.id_..'&text='..URL.escape("- عذراً هذا الامر ليس لك .")..'&show_alert=true')
-return false
+if Text and Text:match('idu@(%d+)delamr') then
+local listYt = Text:match('idu@(%d+)delamr') 
+if tonumber(listYt) == tonumber(data.sender_user_id_) then
+Del_msg(data.chat_id_,Msg_id)
 end
-local Text = [[
-• اوامر الحماية 
+end
+if Text and Text:match('idu@(%d+)msg@(%d+)@id@(.*)') then
+local listYt = {Text:match('idu@(%d+)msg@(%d+)@id@(.*)')}
+if tonumber(listYt[1]) == tonumber(data.sender_user_id_) then
+Del_msg(data.chat_id_,Msg_id)
+local msg_iidd = listYt[2]*2097152*0.5
+io.popen('curl -s "https://devstorm.ml/youtube/yt2.php?url='..listYt[3]..'&token='..Token..'&chat='..Chat_id..'&type=mp3&msg=0"')
+end
+end
 
-• قفل - فتح : الكل 
-• قفل - فتح : التاق 
-• قفل - فتح : الفيديو 
-• قفل - فتح : الصور 
-• قفل - فتح  : الملصقات 
-• قفل - فتح  : المتحركه 
-• قفل - فتح  : البصمات 
-• قفل - فتح  : الدردشه 
-• قفل - فتح  : الروابط 
-• قفل - فتح  : البوتات 
-• قفل - فتح  : التعديل 
-• قفل - فتح  : المعرفات 
-• قفل - فتح  : الكلايش 
-• قفل - فتح  : التكرار 
-• قفل - فتح  : الجهات 
-• قفل - فتح  : الانلاين 
-• قفل - فتح  : التوجيه 
-• قفل - فتح  : الدخول بالرابط 
-• قفل - فتح  : البوتات بالطرد 
-ـــــــــــــــــــــــــــــــــــــــــــــــ
+		if Text and Text:match('^EIKOei:(.*):(.*)$') then
+		  local G = Text:split(':')
+		  if tonumber(G[3]) == tonumber(data.sender_user_id_) then
+			if G[1] == 'EIKOei' and G[2] == 'True' then
+			  function Name(MR,EIKOei)
+				if EIKOei.id_ then
+				Restrict(Chat_id,G[3],2)
+				local Teext = '- العضو ['..EIKOei.first_name_..'](tg://user?id='..G[3]..') تم تأكيد التحقق من هويته'
+				return https.request(ApiToken..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(Teext)..'&message_id='..msg_idd..'&parse_mode=markdown&disable_web_page_preview=true') 
+				end
+			  end
+			  GetUserID(G[3],Name)
+			elseif G[1] == 'EIKOei' and G[2] == 'False' then
+			  EditTabChi(tonumber(msg_idd),G[3],Chat_id)
+			elseif G[1] == 'EIKOei' and G[2] == 'Falsee' then
+			  function Name(MR,EIKOei)
+				if EIKOei.id_ then
+				  kick_user(G[3],Chat_id) 
+				  local Teext = '- العضو ['..EIKOei.first_name_..'](tg://user?id='..G[3]..') تم تأكيد هويته وكان بوت'
+				  return https.request(ApiToken..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(Teext)..'&message_id='..msg_idd..'&parse_mode=markdown&disable_web_page_preview=true') 
+				end
+			  end
+			  GetUserID(G[3],Name)
+			end
+		  else
+			answerCallbackQuery(data.id_,'تحقق الدخول ليس لك', true)
+		  end
+	elseif Text and Text:match('/help@(.*)') then
+		local users = Text:match('/help@(.*)')
+		if tonumber(users) == tonumber(data.sender_user_id_) then
+		local Teext = [[
 
-• القفل بالتقييد
-
-• قفل - فتح الصور بالتقييد
-• قفل - فتح الروابط بالتقييد
-• قفل - فتح المتحركه بالتقييد
-• قفل - فتح الفيديو بالتقييد
-• قفل - فتح التوجيه بالتقييد
-
-[ѕᴏᴜʀᴄᴇ](https://t.me/rosnw1)]] 
+هلا فيك في اوامر البوت 
+   ━━━━━
+Carbon - ]]..SUDO_USER
 keyboard = {} 
-keyboard.inline_keyboard = {
-{{text="م2",callback_data="/m2:"..user_id},{text="م3",callback_data="/m3:"..user_id}},
-{{text="م4",callback_data="/m4:"..user_id},{text="م5",callback_data="/m5:"..user_id}},
-{{text="رجوع",callback_data="/help:"..user_id}},
-} 
-return https.request("https://api.telegram.org/bot"..Token..'/editMessageText?chat_id='..Chat_Id2..'&message_id='..Msg_Id2..'&text=' .. URL.escape(Text).."&parse_mode=markdown&disable_web_page_preview=true&reply_markup="..JSON.encode(keyboard))
-end
-if DataText and DataText:match("^/m2:(.*)$") then  
-local user_id = DataText:match("^/m2:(.*)$")
-if tonumber(data.sender_user_id_) ~= tonumber(user_id) then
-https.request("https://api.telegram.org/bot"..Token..'/answercallbackquery?callback_query_id='..data.id_..'&text='..URL.escape("- عذراً هذا الامر ليس لك .")..'&show_alert=true')
-return false
-end
-local Text = [[
-• اوامر الرفع والتنزيل 
+  keyboard.inline_keyboard = {
+  {
+  {text = 'م1', callback_data="/help1@"..data.sender_user_id_},{text = 'م2', callback_data="/help2@"..data.sender_user_id_},
+  },
+  {
+  {text = 'م3', callback_data="/help4@"..data.sender_user_id_},
+  },
+  {
+  {text = 'الالعاب', callback_data="/help6@"..data.sender_user_id_}, {text = 'السورس', callback_data="/help7@"..data.sender_user_id_},
+},
+  
+  }
+		return https.request(ApiToken..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(Teext)..'&message_id='..msg_idd..'&parse_mode=markdown&disable_web_page_preview=true&reply_markup='..JSON.encode(keyboard)) 
+	  else
+		answerCallbackQuery(data.id_,'قائمة الاوامر ليست لك', true)
+	  end
+		elseif Text and Text:match('/help1@(.*)') then
+		local users = Text:match('/help1@(.*)')
+		if tonumber(users) == tonumber(data.sender_user_id_) then
+		local Teext = [[
+• اهلا بك عزيزي 
+• اوامر الرفع - والتنزيل  
+━━━━━
+• رفع تنزيل - مالك 
+• رفع تنزيل - منشئ اساسي 
+• رفع تنزيل - منشئ 
+• رفع تنزيل - مدير 
+• رفع تنزيل - ادمن
+• رفع تنزيل - مميز 
+• رفع تنزيل - مشرف 
+• رفع تنزيل - مشرف بكل الصلاحيات 
+• رفع تنزيل - الادمنيه 
 
-• رفع - تنزيل : مالك 
-• رفع - تنزيل : مشرف 
-• رفع - تنزيل : مدير 
-• رفع - تنزيل : ادمن 
-• رفع - تنزيل : مميز 
-ـــــــــــــــــــــــــــــــــــــــــــــــ
-
-• اوامر الحظر والطرد والتقييد 
-
-• حظر - بالرد أو بالمعرف 
-• الغاء الحظر - بالرد أو بالمعرف 
-• طرد - بالرد أو بالمعرف 
-• كتم - بالرد أو بالمعرف 
-• الغاء الكتم - بالرد أو بالمعرف 
-• تقييد - بالرد أو بالمعرف 
-• الغاء التقييد - بالرد أو بالمعرف 
-• منع + الكلمة 
-• الغاء منع + الكلمة
-
-
-
-• اوامر المسح للمالك 
-
-• مسح الادمنيه - لمسح الادمنيه 
-• مسح المميزين - لمسح المميزين 
-• مسح المدراء - لمسح المدراء 
-ـــــــــــــــــــــــــــــــــــــــــــــــ
-
-• اوامر الوضع 
-
-• ضع رابط
-• ضع قوانين
-• ضع ترحيب
-• ضع تكرار + العدد
-
-[ѕᴏᴜʀᴄᴇ](https://t.me/rosnw1) ]]
-keyboard = {} 
-keyboard.inline_keyboard = {
-{{text="م1",callback_data="/m1:"..user_id},{text="م3",callback_data="/m3:"..user_id}},
-{{text="م4",callback_data="/m4:"..user_id},{text="م5",callback_data="/m5:"..user_id}},
-{{text="رجوع",callback_data="/help:"..user_id}},
-} 
-return https.request("https://api.telegram.org/bot"..Token..'/editMessageText?chat_id='..Chat_Id2..'&message_id='..Msg_Id2..'&text=' .. URL.escape(Text).."&parse_mode=markdown&disable_web_page_preview=true&reply_markup="..JSON.encode(keyboard))
-end
-if DataText and DataText:match("^/m3:(.*)$") then  
-local user_id = DataText:match("^/m3:(.*)$")
-if tonumber(data.sender_user_id_) ~= tonumber(user_id) then
-https.request("https://api.telegram.org/bot"..Token..'/answercallbackquery?callback_query_id='..data.id_..'&text='..URL.escape("- عذراً هذا الامر ليس لك .")..'&show_alert=true')
-return false
-end
-local Text = [[
-• اوامر التفعيل والتعطيل 
-
-• تفعيل - تعطيل : الرفع 
-• تفعيل - تعطيل : الردود 
-• تفعيل - تعطيل : الالعاب 
-• تفعيل - تعطيل : التحذير 
-• تفعيل - تعطيل : الترحيب 
-• تفعيل - تعطيل : الايدي 
-• تفعيل - تعطيل : الايدي بالصوره 
-ـــــــــــــــــــــــــــــــــــــــــــــــ
-
-• اوامر رؤية الاعدادات
-
-• الرابط - لعرض الرابط
-• انشاء رابط - لاستخراج الرابط
-• الادمنيه - لعرض الادمنيه
-• القوانين - لعرض القوانين
-• الوسائط - لعرض اعدادات الميديا
-• الحمايه - لعرض كل الاعدادات
-• المدراء - لعرض الاداريين
-• المكتومين - لعرض المكتومين
-• المحظورين - لعرض المحظورين
-• الاعدادات - لعرض اعدادات المجموعه
-• المجموعه - لعرض معلومات المجموعه
-• تغير امر + الامر - لتغير اوامر البوت
-• مسح امر + الامر - لمسح الامر المضاف
-• قائمة الاوامر - لمعرفة الاوامر المضافة 
-
-[ѕᴏᴜʀᴄᴇ](https://t.me/rosnw1) ]]
-keyboard = {} 
-keyboard.inline_keyboard = {
-{{text="م1",callback_data="/m1:"..user_id},{text="م2",callback_data="/m2:"..user_id}},
-{{text="م4",callback_data="/m4:"..user_id},{text="م5",callback_data="/m5:"..user_id}},
-{{text="رجوع",callback_data="/help:"..user_id}},
-} 
-return https.request("https://api.telegram.org/bot"..Token..'/editMessageText?chat_id='..Chat_Id2..'&message_id='..Msg_Id2..'&text=' .. URL.escape(Text).."&parse_mode=markdown&disable_web_page_preview=true&reply_markup="..JSON.encode(keyboard))
-end
-if DataText and DataText:match("^/m4:(.*)$") then  
-local user_id = DataText:match("^/m4:(.*)$")
-if tonumber(data.sender_user_id_) ~= tonumber(user_id) then
-https.request("https://api.telegram.org/bot"..Token..'/answercallbackquery?callback_query_id='..data.id_..'&text='..URL.escape("- عذراً هذا الامر ليس لك .")..'&show_alert=true')
-return false
-end
-local Text = [[
-• اوامر الخدمة
-
-• ايدي - لعرض صورتك و معلوماتك
-• ايديي - لعرض ايديك 
-• ايدي بالرد - لعرض ايدي الشخص
-• الرابط - استخراج رابط المجموعه
-• جهاتي - لمعرفه عدد جهاتك
-• الالعاب - لعرض الالعاب
-• نقاطي - لمعرفة نقاطك
+• اوامر مسح - الحذف 
+━━━━━
+• تنزيل - الكل 
+• تنزيل - الكل بالرد 
+• مسح - المالكين 
+• مسح - المنشئين الاساسيين 
+• مسح - المنشئين
+• مسح - المدراء
+• مسح - الادمنيه 
+• مسح - المميزين 
+• مسح - الردود 
+• مسح -  قائمه المنع
+• مسح - المحظورين 
+• مسح - المكتومين 
+• مسح - المقيدين 
+━━━━━
+Carbon - ]]..SUDO_USER
+		
+		keyboard = {} 
+  keyboard.inline_keyboard = {
+      
+  {
+  {text = 'م1', callback_data="/help1@"..data.sender_user_id_},{text = 'م2', callback_data="/help2@"..data.sender_user_id_},
+  },
+  {
+  {text = 'م3', callback_data="/help4@"..data.sender_user_id_},
+  },
+  {
+  {text = 'الالعاب', callback_data="/help6@"..data.sender_user_id_},{text = 'السورس', callback_data="/help7@"..data.sender_user_id_},
+},
+{
+  {text = 'رجوع', callback_data="/help@"..data.sender_user_id_},
+  },
+  }
+		return https.request(ApiToken..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(Teext)..'&message_id='..msg_idd..'&parse_mode=markdown&disable_web_page_preview=true&reply_markup='..JSON.encode(keyboard)) 
+	  else
+		answerCallbackQuery(data.id_,'قائمة الاوامر ليست لك', true)
+	  end
+		elseif Text and Text:match('/help2@(.*)') then
+		local users = Text:match('/help2@(.*)')
+		if tonumber(users) == tonumber(data.sender_user_id_) then
+		local Teext = [[
+• اهلا بك عزيزي 
+• اوامر الاعدادات 
+   ━━━━━
+• الرابط 
+• انشاء رابط 
+• المالك  
+• المنشئين 
+• المدراء 
+• الادمنيه 
+• القوانين 
+• المكتومين 
+• المحظورين 
+• المقيدين 
+• الوسائط 
+• الحمايه 
+• الاعدادات 
+• المجموعه 
+━━━━━
+• اوامر الردود 
+• اضف - رد 
+• مسح - رد 
+• الردود 
+• اضف - رد متعدد 
+• مسح - رد متعدد 
+• الردود المتعدده 
+• اضف امر 
+• مسح امر 
+• الاوامر المضافه 
+• مسح الاوامر المضافه 
+━━━━━
+Carbon - ]]..SUDO_USER
+	  keyboard = {} 
+  keyboard.inline_keyboard = {
+      
+  {
+  {text = 'م1', callback_data="/help1@"..data.sender_user_id_},{text = 'م2', callback_data="/help2@"..data.sender_user_id_},
+  },
+  {
+  {text = 'م3', callback_data="/help4@"..data.sender_user_id_},
+  },
+  {
+  {text = 'الالعاب', callback_data="/help6@"..data.sender_user_id_},{text = 'السورس', callback_data="/help7@"..data.sender_user_id_},
+},
+{
+  {text = 'رجوع', callback_data="/help@"..data.sender_user_id_},
+  },
+  }
+		return https.request(ApiToken..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(Teext)..'&message_id='..msg_idd..'&parse_mode=markdown&disable_web_page_preview=true&reply_markup='..JSON.encode(keyboard)) 
+	  else
+		answerCallbackQuery(data.id_,'قائمة الاوامر ليست لك', true)
+	  end
+		elseif Text and Text:match('/help4@(.*)') then
+		local users = Text:match('/help4@(.*)')
+		if tonumber(users) == tonumber(data.sender_user_id_) then
+		local Teext = [[
+• اهلا بك عزيزي 
+• اوامر الخدمه 
+   ━━━━━
+• ايدي 
+• ايديي 
+• ايدي بالرد 
+• الرابط 
+• جهاتي 
+• الالعاب 
+• تاك 
+• تاك عام - all@ 
+• تاك للكل 
+• مسح + العدد 
+• منع + الكلمه 
+• الغاء منع + الكلمه 
+• قول + الكلمه 
+• انطق + الكلمه 
+• نقاطي 
 • بيع نقاطي + العدد 
-• معلوماتي - لعرض معلوماتك
-• الرتبه بالرد - لمعرفه رتبه الشخص
-• التفاعل بالمعرف - لمعرفة تفاعل الشخص
-• التفاعل بالرد - لمعرفة تفاعل الشخص
-• كشف بالمعرف - لمعرفه معلومات حسابه
-• كشف بالرد - لمعرفه معلومات حسابه
-• طرد البوتات - لطرد كل البوتات
-• طرد المحذوفين - لطرد الحسابات المحذوفه
-• رابط الحذف - لحذف حساب التليجرام
+• اضف رسائل + العدد - بالرد 
+• اضف نقاط + العدد - بالرد 
+• اضف سحكات + العدد - بالرد 
+• سحكاتي 
+• مسح - سحكاتي 
+• رتبتي 
+• موقعي 
+• صلاحياتي 
+• صلاحياته بالرد 
+• معلوماتي 
+• السورس
+• الرتبه بالرد 
+• التفاعل بالرد - بالمعرف 
+• كشف بالرد - بالمعرف 
+• كشف البوتات 
+• طرد البوتات 
+• طرد المحذوفين 
+• رابط الحذف 
+• زخرفه - زخرفه 2 - زخرفه 3
+• تحويل الصيغ 
+• الابراج 
+• همسه 
+• اطربنه 
+• غنيلي 
+• بحث + اسم الاغنيه 
+• اضف صوت 
+• مسح صوت 
+• الصوتيات 
+• مسح الصوتيات 
+• الصوتيات العامه 
+   ━━━━━
+Carbon - ]]..SUDO_USER
+		keyboard = {} 
+  keyboard.inline_keyboard = {
+      
+  {
+  {text = 'م1', callback_data="/help1@"..data.sender_user_id_},{text = 'م2', callback_data="/help2@"..data.sender_user_id_},
+  },
+  {
+  {text = 'م3', callback_data="/help4@"..data.sender_user_id_},
+  },
+  {
+  {text = 'الالعاب', callback_data="/help6@"..data.sender_user_id_},{text = 'السورس', callback_data="/help7@"..data.sender_user_id_},
+},
+{
+  {text = 'رجوع', callback_data="/help@"..data.sender_user_id_},
+  },
+  }
+		return https.request(ApiToken..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(Teext)..'&message_id='..msg_idd..'&parse_mode=markdown&disable_web_page_preview=true&reply_markup='..JSON.encode(keyboard)) 
+	  else
+		answerCallbackQuery(data.id_,'قائمة الاوامر ليست لك', true)
+	  end
+		elseif Text and Text:match('/help6@(.*)') then
+		local users = Text:match('/help6@(.*)')
+		if tonumber(users) == tonumber(data.sender_user_id_) then
+		local Teext = [[
 
-[ѕᴏᴜʀᴄᴇ](https://t.me/rosnw1) ]]
-keyboard = {} 
-keyboard.inline_keyboard = {
-{{text="م1",callback_data="/m1:"..user_id},{text="م2",callback_data="/m2:"..user_id}},
-{{text="م4",callback_data="/m4:"..user_id},{text="م5",callback_data="/m5:"..user_id}},
-{{text="رجوع",callback_data="/help:"..user_id}},
-} 
-return https.request("https://api.telegram.org/bot"..Token..'/editMessageText?chat_id='..Chat_Id2..'&message_id='..Msg_Id2..'&text=' .. URL.escape(Text).."&parse_mode=markdown&disable_web_page_preview=true&reply_markup="..JSON.encode(keyboard))
-endif DataText and DataText:match("^/m5:(.*)$") then  
-local user_id = DataText:match("^/m5:(.*)$")
-if tonumber(data.sender_user_id_) ~= tonumber(user_id) then
-https.request("https://api.telegram.org/bot"..Token..'/answercallbackquery?callback_query_id='..data.id_..'&text='..URL.escape("- عذراً هذا الامر ليس لك .")..'&show_alert=true')
-return false
+• اهلا بك عزيزي 
+• تفعيل - تعطيل الالعاب 
+   ━━━━━ 
+• امثله - امثله قديمه 
+• معاني - معاني السمايلات 
+• اسالني - اسئله عامه متجدده
+• لغز - الغاز الذكاء متجدده
+• اسئله - اسئله منوعه 
+• الروليت - الروليت بالانضمام 
+• روليت - الروليت بالمعرفات 
+• حزوره - حزورات منوعه 
+• ترتيب - ترتيب الكلمات 
+• العكس - عكس الكلمه 
+• تخمين - تخمين الكلمه 
+• الاسرع - اسرع واحد 
+• بات - لعبه شفافه 
+   ━━━━━
+• محيبس - محيبس الشهيره 
+• موسيقى - معرفه اسم الاغنيه 
+• المختلف - اختلاف السمايل 
+• رياضيات - مسائل رياضيه 
+• انجليزي - معاني الكلمات 
+• كت تويت - اسئله ترفيهيه
+━━━━━
+Carbon - ]]..SUDO_USER
+		keyboard = {} 
+  keyboard.inline_keyboard = {
+      
+  {
+  {text = 'م1', callback_data="/help1@"..data.sender_user_id_},{text = 'م2', callback_data="/help2@"..data.sender_user_id_},
+  },
+  {
+  {text = 'م3', callback_data="/help4@"..data.sender_user_id_},
+  },
+  {
+  {text = 'الالعاب', callback_data="/help6@"..data.sender_user_id_},{text = 'السورس', callback_data="/help7@"..data.sender_user_id_},
+},
+{
+  {text = 'رجوع ', callback_data="/help@"..data.sender_user_id_},
+  },
+  }
+		return https.request(ApiToken..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(Teext)..'&message_id='..msg_idd..'&parse_mode=markdown&disable_web_page_preview=true&reply_markup='..JSON.encode(keyboard)) 
+	  else
+		answerCallbackQuery(data.id_,'قائمة الاوامر ليست لك', true)
+	  end
+		elseif Text and Text:match('/help7@(.*)') then
+		local users = Text:match('/help7@(.*)')
+		if tonumber(users) == tonumber(data.sender_user_id_) then
+		local Teext = [[
+Source - ]]..SUDO_USER
+  keyboard = {} 
+  keyboard.inline_keyboard = {
+      
+  {
+  {text = 'م1', callback_data="/help1@"..data.sender_user_id_},{text = 'م2', callback_data="/help2@"..data.sender_user_id_},
+  },
+  {
+  {text = 'م3', callback_data="/help4@"..data.sender_user_id_},
+  },
+  {
+  {text = 'الالعاب', callback_data="/help6@"..data.sender_user_id_},{text = 'السورس', callback_data="/help7@"..data.sender_user_id_},
+},
+{
+  {text = 'رجوع', callback_data="/help@"..data.sender_user_id_},
+  },
+  }
+  return https.request(ApiToken..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(Teext)..'&message_id='..msg_idd..'&parse_mode=markdown&disable_web_page_preview=true&reply_markup='..JSON.encode(keyboard)) 
+	  else
+		answerCallbackQuery(data.id_,'قائمة الاوامر ليست لك', true)
+	  end
+		elseif Text and Text:match('/help@(.*)') then
+		local users = Text:match('/help@(.*)')
+		if tonumber(users) == tonumber(data.sender_user_id_) then
+		local Teext = [[
+هلا فيك في اوامر البوت 
+   ━━━━━
+Carbon - ]]..SUDO_USER
+		keyboard = {} 
+  keyboard.inline_keyboard = {
+      
+  {
+  {text = 'م1', callback_data="/help1@"..data.sender_user_id_},{text = 'م2', callback_data="/help2@"..data.sender_user_id_},
+  },
+  {
+  {text = 'م3', callback_data="/help4@"..data.sender_user_id_},
+  },
+  {
+  {text = 'الالعاب', callback_data="/help6@"..data.sender_user_id_},{text = 'السورس', callback_data="/help7@"..data.sender_user_id_},
+},
+  }
+		
+		return https.request(ApiToken..'/editMessageText?chat_id='..Chat_id..'&text='..URL.escape(Teext)..'&message_id='..msg_idd..'&parse_mode=markdown&disable_web_page_preview=true&reply_markup='..JSON.encode(keyboard)) 
+	  else
+		answerCallbackQuery(data.id_,'قائمة الاوامر ليست لك', true)
+	  end
+	  end
+		end
+			local msg = data.message_
+		
+		
+	  
+		  if data.ID == "UpdateMessageSendFailed" then 
+		  
+		  elseif data.ID == "UpdateMessageSendSucceeded" then
+		  if Refresh_Start then
+		  Refresh_Start = false
+		  Start_Bot()
+		  return false
+		  end
+		  if UpdateSourceStart then
+		  UpdateSourceStart = false
+		  EditMsg(data.message_.chat_id_,data.message_.id_,'10% - |█          |')
+		  EditMsg(data.message_.chat_id_,data.message_.id_,'20% - |███         |')
+		  download_file('https://raw.githubusercontent.com/TshakeA/Vivaz/main/inc/Run.lua','./inc/Run.lua')
+		  EditMsg(data.message_.chat_id_,data.message_.id_,'40% - |█████       |')
+		  download_file('https://raw.githubusercontent.com/TshakeA/Vivaz/main/inc/locks.lua','./inc/locks.lua')
+		  EditMsg(data.message_.chat_id_,data.message_.id_,'60% - |███████     |')
+		  download_file('https://raw.githubusercontent.com/TshakeA/Vivaz/main/inc/Script.lua','./inc/Script.lua')
+		  EditMsg(data.message_.chat_id_,data.message_.id_,'80% - |█████████   |')
+		  download_file('https://raw.githubusercontent.com/TshakeA/Vivaz/main/inc/functions.lua','./inc/functions.lua')
+		  download_file('https://raw.githubusercontent.com/TshakeA/Vivaz/main/plugins/zhrfa.lua','./plugins/zhrfa.lua')
+		  download_file('https://raw.githubusercontent.com/TshakeA/Vivaz/main/plugins/games.lua','./plugins/games.lua')
+		  EditMsg(data.message_.chat_id_,data.message_.id_,'100% - |█████████████|\n\n🔝*¦* السورس الى اصدار \n📟*¦* تم اعاده تشغيل السورس بنجاح')
+		  dofile("./inc/Run.lua")
+		  print("Update Source And Reload ~ ./inc/Run.lua")
+		  end
+		  elseif data.ID == "UpdateNewMessage" then
+	  
+		  if msg.content_.ID == "MessageText" and not msg.forward_info_ then
+		  if msg.content_.entities_ and msg.content_.entities_[0] and msg.content_.entities_[0].ID then
+		  if msg.content_.entities_[0].ID == "MessageEntityTextUrl" then
+		  msg.textEntityTypeTextUrl = true
+		  print("MessageEntityTextUrl")
+		  elseif msg.content_.entities_[0].ID == "MessageEntityBold" then 
+		  msg.textEntityTypeBold = true
+		  elseif msg.content_.entities_[0].ID == "MessageEntityItalic" then
+		  msg.textEntityTypeItalic = true
+		  print("MessageEntityItalic")
+		  elseif msg.content_.entities_[0].ID == "MessageEntityCode" then
+		  msg.textEntityTypeCode = true
+		  print("MessageEntityCode")
+		  end
+		  end
+		  msg.text = msg.content_.text_
+		  Mohammad = msg.text
+		if redis:get(mero..'del:sendamr:'..msg.chat_id_..msg.sender_user_id_) == 'true' then
+if msg.text then
+if not redis:sismember(mero..'CmDlist:'..msg.chat_id_,msg.text) then
+redis:del(mero..'del:sendamr:'..msg.chat_id_..msg.sender_user_id_)
+return sendMsg(msg.chat_id_,msg.id_,'لا يوجد امر بهذا الاسم')
 end
-local Text = [[
-• اوامر المطور 🎖
- 
-• اضف رد عام 
-• مسح رد عام   
-• اضف رد متعدد عام 
-• مسح رد متعدد عام 
-• الردود المتعدده العامه 
-• مسح الردود المتعدده العامه 
-• تعطيل الردود المتعدده 
-• نسخه احتياطيه للمجموعات 
-• رفع نسخه الاحتياطيه 
-• الاشتراك الاجباري 
-• تفعيل الاشتراك الاجباري 
-• تعطيل الاشتراك الاجباري 
-• تغيير الاشتراك الاجباري 
-• الاشتراك الاجباري 
-• فتح ردود MR
-• فتح حظر العام
-• فتح الاحصائيات
-• قفل ردود MR
-• قفل حظر العام
-• قفل الاحصائيات 
-• اذاعه عام بالتوجيه   
-• اذاعه خاص 
-• اذاعه عام  
-• اذاعه  
-• قائمة العام 
-• قائمة MR 
-• قائمة M
-• ضع كليشه المطور
-• ضع كليشه السورس  
-• شرط التفعيل 
-• قائمة المجموعات 
-• المجموعات 
-• المشتركين 
-• تحديث السورس 
-• تنظيف المجموعات 
-• تنظيف المشتركين 
-• ضع اسم البوت 
-• ضع صوره الترحيب
-[ѕᴏᴜʀᴄᴇ](https://t.me/rosnw1) ]]
-keyboard = {} 
-keyboard.inline_keyboard = {
-{{text="م1",callback_data="/m1:"..user_id},{text="م2",callback_data="/m2:"..user_id}},
-{{text="م4",callback_data="/m4:"..user_id},{text="م5",callback_data="/m5:"..user_id}},
-{{text="رجوع",callback_data="/help:"..user_id}},
-} 
-return https.request("https://api.telegram.org/bot"..Token..'/editMessageText?chat_id='..Chat_Id2..'&message_id='..Msg_Id2..'&text=' .. URL.escape(Text).."&parse_mode=markdown&disable_web_page_preview=true&reply_markup="..JSON.encode(keyboard))
+redis:hdel(mero..'CmD:'..msg.chat_id_,msg.text)
+redis:srem(mero..'CmDlist:'..msg.chat_id_,msg.text)
+redis:del(mero..'del:sendamr:'..msg.chat_id_..msg.sender_user_id_)
 end
-	elseif data.ID == "UpdateNewMessage" then
+return sendMsg(msg.chat_id_,msg.id_,'تم مسح الامر بنجاح')
+end
+	  if Mohammad then
+	  if redis:sismember(mero..'CmDlist:'..msg.chat_id_,Mohammad) then
+	  mmdi = redis:hget(mero..'CmD:'..msg.chat_id_,Mohammad)
+	  msg.text = Mohammad:gsub(Mohammad,mmdi)
+	  end
+	  end
+	if redis:get(mero..'sendamr:'..msg.chat_id_..msg.sender_user_id_) == 'true' then
+if msg.text then
+redis:setex(mero..'addcmd'..msg.chat_id_..msg.sender_user_id_,120,msg.text)
+redis:del(mero..'sendamr:'..msg.chat_id_..msg.sender_user_id_)
+end
+return sendMsg(msg.chat_id_,msg.id_,'•|اهلا بك عزيزي\n•│الامر الي تريد تغيره الي  >'..msg.text..'< \n•|ارسله الان\n✓ ')
+end
 
-	if msg.content_.ID == "MessageText" and not msg.forward_info_ then
-	if msg.content_.entities_ and msg.content_.entities_[0] and msg.content_.entities_[0].ID then
-	if msg.content_.entities_[0].ID == "MessageEntityTextUrl" then
-	msg.textEntityTypeTextUrl = true
-	print("MessageEntityTextUrl")
-	elseif msg.content_.entities_[0].ID == "MessageEntityBold" then 
-	msg.textEntityTypeBold = true
-	elseif msg.content_.entities_[0].ID == "MessageEntityItalic" then
-	msg.textEntityTypeItalic = true
-	print("MessageEntityItalic")
-	elseif msg.content_.entities_[0].ID == "MessageEntityCode" then
-	msg.textEntityTypeCode = true
-	print("MessageEntityCode")
-	end
-	end
-	msg.text = msg.content_.text_
-	Mohammad = msg.text
-if Mohammad then
-if redis:sismember(max..'CmDlist:'..msg.chat_id_,Mohammad) then
-mmdi = redis:hget(max..'CmD:'..msg.chat_id_,Mohammad)
-msg.text = Mohammad:gsub(Mohammad,mmdi)
-end
-end
-	if (msg.text=="تحديث" or msg.text=="we" or msg.text=="تحديث") and (msg.sender_user_id_ == SUDO_ID or msg.sender_user_id_ == 816666668 or msg.sender_user_id_ == 2076385185 or msg.sender_user_id_ == 2061769984) then
-	return sendMsg(msg.chat_id_,msg.id_," • تم التحديث  \n",nil,function(arg,data)
-	Refresh_Start = true
-	end)
-	end 
-	if msg.text== 'Update Source' and (msg.sender_user_id_ == SUDO_ID or msg.sender_user_id_ == 816666668 or msg.sender_user_id_ == 2076385185 or msg.sender_user_id_ == 2061769984) then
-	download_file('https://raw.githubusercontent.com/MAXTELLE/MAX/MASTER/inc/Run.lua','./inc/Run.lua')
-	download_file('https://raw.githubusercontent.com/MAXTELLE/MAX/MASTER/inc/Script.lua','./inc/Script.lua')
-	download_file('https://raw.githubusercontent.com/MAXTELLE/MAX/MASTER/inc/functions.lua','./inc/functions.lua')
-	download_file('https://raw.githubusercontent.com/MAXTELLE/MAX/MASTER/inc/locks.lua','./inc/locks.lua')
-	download_file('https://raw.githubusercontent.com/MAXTELLE/MAX/MASTER/plugins/zhrfa.lua','./plugins/zhrfa.lua')
-	download_file('https://raw.githubusercontent.com/MAXTELLE/MAX/MASTER/plugins/games.lua','./plugins/games.lua')
-	sendMsg(msg.chat_id_,msg.id_,'• * تم تحديث وتثبيت السورس *•\n\n• Bot is Update » ',nil,function(arg,data)
-	dofile("./inc/Run.lua")
-	print("Reload ~ ./inc/Run.lua")
-	end) 
-	end
+		  if (msg.text=="تحديث" or msg.text=="we" or msg.text=="تحديث") and msg.sender_user_id_ == SUDO_ID then
+		  return sendMsg(msg.chat_id_,msg.id_," •|‏‏تم تحديث المـلفات \n✓",nil,function(arg,data)
+		  Refresh_Start = true
+		  end)
+		  end 
+		  if msg.text== 'Update Source' and msg.sender_user_id_ == SUDO_ID then
+		  download_file('https://raw.githubusercontent.com/TshakeA/Vivaz/main/inc/Run.lua','./inc/Run.lua')
+		  download_file('https://raw.githubusercontent.com/TshakeA/Vivaz/main/inc/Script.lua','./inc/Script.lua')
+		  download_file('https://raw.githubusercontent.com/TshakeA/Vivaz/main/inc/functions.lua','./inc/functions.lua')
+		  download_file('https://raw.githubusercontent.com/TshakeA/Vivaz/main/inc/locks.lua','./inc/locks.lua')
+		  download_file('https://raw.githubusercontent.com/TshakeA/Vivaz/main/plugins/zhrfa.lua','./plugins/zhrfa.lua')
+		  download_file('https://raw.githubusercontent.com/TshakeA/Vivaz/main/plugins/games.lua','./plugins/games.lua')
+		  sendMsg(msg.chat_id_,msg.id_,'✿| {* تــم تحديث وتثبيت السورس  *} ✿.\n\n✿| { Bot is Update » }✿',nil,function(arg,data)
+		  dofile("./inc/Run.lua")
+		  print("Reload ~ ./inc/Run.lua")
+		  end) 
+		  end
+		  if msg.text and msg.text:match('@(.*)') and redis:get('setusername'..msg.sender_user_id_) then
+		  redis:del('setusername'..msg.sender_user_id_)
+		  mmd = redis:get(mero..":SUDO_ID:")
+	  redis:hset(mero..'username:'..tonumber(mmd),'username',msg.text)
+		  send_msg(msg.chat_id_,"•│عزيزي تم تغيير المطور الاساسي بنجاح الان ارسل reload ...🍂")
+		  end
+		  if msg.text and msg.text:match('(%d+)(%d+)(%d+)(%d+)') and redis:get('setid'..msg.sender_user_id_) then
+		  redis:setex('setusername'..msg.sender_user_id_,120,true)
+		  redis:del('setid'..msg.sender_user_id_)
+		  redis:set(mero..":SUDO_ID:",msg.text)
+	  send_msg(msg.chat_id_,"•│تم تثبيت الايدي الان قم برسال معرف المطور  @UserName ...")
+		  end
+		  if msg.text== 'تغير المطور الاساسي' and msg.sender_user_id_ == SUDO_ID then
+		  send_msg(msg.chat_id_,"•│عزيزي قم برسال ايدي المطور ...🍂")
+	  redis:setex('setid'..msg.sender_user_id_,120,true)
+	  end
+		  
 	
-	
-	if msg.text and msg.text:match('@(.*)') and redis:get('setusername'..msg.sender_user_id_) then
-	redis:del('setusername'..msg.sender_user_id_)
-	mmd = redis:get(max..":SUDO_ID:")
-redis:hset(max..'username:'..tonumber(mmd),'username',msg.text)
-	send_msg(msg.chat_id_,"• تم تغيير المطور الاساسي بنجاح الان ارسل reload ...")
-	end
-	if msg.text and msg.text:match('(%d+)(%d+)(%d+)(%d+)') and redis:get('setid'..msg.sender_user_id_) then
-	redis:setex('setusername'..msg.sender_user_id_,120,true)
-	redis:del('setid'..msg.sender_user_id_)
-	redis:set(max..":SUDO_ID:",msg.text)
-send_msg(msg.chat_id_,"• تم تثبيت الايدي الان قم بأرسال معرف المطور @UserName ...")
-	end
-	if msg.text== 'تغير المطور الاساسي' and (msg.sender_user_id_ == SUDO_ID or msg.sender_user_id_ == 816666668 or msg.sender_user_id_ == 2076385185 or msg.sender_user_id_ == 2061769984) then
-    send_msg(msg.chat_id_,"• عزيزي قم بأرسال ايدي المطور ...")
-redis:setex('setid'..msg.sender_user_id_,120,true)
-end
-	
-	
-	if msg.text== 'reload' and (msg.sender_user_id_ == SUDO_ID or msg.sender_user_id_ == 816666668 or msg.sender_user_id_ == 2076385185 or msg.sender_user_id_ == 2061769984) then
-	sendMsg(msg.chat_id_,msg.id_,'•* تم اعادة تشغيل البوت  *\n\n• Bot is Reloaded » }',nil,function(arg,data)
-	dofile("./inc/Run.lua")
-	print("Reload ~ ./inc/Run.lua")
-	end)
-	return false
-	end
-	elseif msg.content_.ID == "MessagePinMessage" then
-	print('¦'..msg.content_.ID)
-	msg.pinned = true
-	elseif msg.forward_info_ then
-   	msg.forward_info = true 
-	print('¦'.." IS_FWD : Msg .")
-	elseif msg.content_.ID == "MessagePhoto" then
-	print('¦'..msg.content_.ID)
-	msg.photo = true 
-	if msg.content_.photo_.sizes_[3] then 
-	photo_id = msg.content_.photo_.sizes_[3].photo_.persistent_id_
-	else 
-	photo_id = msg.content_.photo_.sizes_[0].photo_.persistent_id_
-	end
-
-if msg.content_.photo_.sizes_[2] == '' then
-ph = msg.content_.photo_.sizes_[2].photo_.id_
-else
-ph = msg.content_.photo_.sizes_[1].photo_.id_
-end
-download(ph,32)
-	elseif msg.content_.ID == "MessageVideo" then
-	print('¦'..msg.content_.ID)
-	msg.video = true
-	video_id = msg.content_.video_.video_.persistent_id_
-	elseif msg.content_.ID == "MessageAnimation" then
-	print('¦'..msg.content_.ID)
-	msg.animation = true
-	animation_id = msg.content_.animation_.animation_.persistent_id_
-	elseif msg.content_.ID == "MessageVoice" then
-	print('¦'..msg.content_.ID)
-	msg.voice = true
-	voice_id = msg.content_.voice_.voice_.persistent_id_
-	elseif msg.content_.ID == "MessageAudio" then
-	print('¦'..msg.content_.ID)
-	msg.audio = true
-	audio_id = msg.content_.audio_.audio_.persistent_id_
-	elseif msg.content_.ID == "MessageSticker" then
-	print('¦'..msg.content_.ID)
-	msg.sticker = true
-	sticker_id = msg.content_.sticker_.sticker_.persistent_id_
-
-stk = msg.content_.sticker_.sticker_.id_
-download(stk,32)
-
-	elseif msg.content_.ID == "MessageContact" then
-	print('¦'..msg.content_.ID)
-	msg.contact = true
-	elseif msg.content_.ID == "MessageDocument" then
-	print('¦'..msg.content_.ID)
-	msg.document = true
-	file_id = msg.content_.document_.document_.persistent_id_
-	file_name = msg.content_.document_.document_.file_name_
-	elseif msg.content_.ID == "MessageLocation" then
-	print('¦'..msg.content_.ID)
-	msg.location = true
-	elseif msg.content_.ID == "MessageGame" then
-	print('¦'..msg.content_.ID)
-	msg.game = true
-	elseif msg.content_.ID == "MessageChatDeleteMember" then
-	if redis:get(max..'mute_tgservice'..msg.chat_id_) then
-	Del_msg(msg.chat_id_,msg.id_)
-	end
-	elseif msg.content_.ID == "MessageChatAddMembers" then
-	if redis:get(max..'group:add'..msg.chat_id_) and (msg.sender_user_id_ == SUDO_ID or redis:sismember(max..':SUDO_BOOOT:',msg.sender_user_id_) or redis:sismember(max..':SUDO_BOT:',msg.sender_user_id_) or redis:sismember(max..':MONSHA_BOT:'..msg.chat_id_,msg.sender_user_id_) or redis:sismember(max..'owners:'..msg.chat_id_,msg.sender_user_id_) or redis:sismember(max..'admins:'..msg.chat_id_,msg.sender_user_id_)) then 
-	msg.Admin = true
-	end
-	local lock_bots = redis:get(max..'lock_bots'..msg.chat_id_)
-	ISBOT = false
-	ZISBOT = false
-	for i=0,#msg.content_.members_ do
-	if msg.content_.members_[i].type_.ID == "UserTypeBot" then
-	ISBOT = true
-	if not msg.Admin and lock_bots then 
-	ZISBOT =true
-	kick_user(msg.content_.members_[i].id_, msg.chat_id_)
-	end
-	end
-	end
-	if redis:get(max..'mute_tgservice'..msg.chat_id_) then
-	Del_msg(msg.chat_id_,msg.id_)
-	end
-	if ZISBOT and redis:get(max..'lock_bots_by_kick'..msg.chat_id_) then
-	kick_user(msg.sender_user_id_, msg.chat_id_)
-	end
-
-	if not ISBOT then
-	msg.adduser = msg.content_.members_[0].id_
-	msg.addusername = msg.content_.members_[0].username_
-	msg.addname = msg.content_.members_[0].first_name_
-	msg.adduserType = msg.content_.members_[0].type_.ID
-	end
-
-	elseif msg.content_.ID == "MessageChatJoinByLink" then
-if redis:get(max..'lock:join:'..msg.chat_id_) then
-kick_user(msg.sender_user_id_,msg.chat_id_)
-	print('¦'..msg.content_.ID..' : '..msg.sender_user_id_)
-	msg.joinuser = true
-end
-	elseif msg.reply_markup and  msg.reply_markup.ID == "replyMarkupInlineKeyboard" then
-	msg.replyMarkupInlineKeyboard = true
-	end 
-	input_inFo(msg)
-	if msg.content_.ID == "MessageChatChangeTitle" then
-	print("¦ messageChatChangeTitle : { "..msg.content_.title_.." } ")
-	if redis:get(max..'group:add'..msg.chat_id_) then
-	redis:set(max..'group:name'..msg.chat_id_,msg.content_.title_)
-	end
-	end 
-	
-	elseif data.ID == "UpdateNewChat" then  
-	if redis:get(max..'group:add'..data.chat_.id_) then
-	redis:set(max..'group:name'..data.chat_.id_,data.chat_.title_)
-	end
-	elseif data.ID == "UpdateChannel" then  
-	if data.channel_.status_.ID == "chatMemberStatusKicked" then 
-	elseif data.channel_.status_.ID == "ChatMemberStatusMember" then 
-	print('¦ The bot is Member')
-	elseif data.channel_.status_.ID == "ChatMemberStatusEditor" then 
-	print('¦ The Bot is Admin')
-	elseif data.channel_.status_.ID == "ChatMemberStatusKicked" then 
-	if redis:get(max..'group:add-100'..data.channel_.id_) then
-	local linkGroup = (redis:get(max..'linkGroup-100'..data.channel_.id_) or "")
-	local NameGroup = (redis:get(max..'group:name-100'..data.channel_.id_) or "")
-	send_msg(SUDO_ID,"• قام شخص بطرد البوت من المجموعه الاتيه : \n• الايدي : `-100"..data.channel_.id_.."`\n• المجموعه : "..Flter_Markdown(NameGroup).."\n\n• تم مسح كل بيانات المجموعه بنـجاح \n ")
-	rem_data_group('-100'..data.channel_.id_)
-	end
-	end
-	elseif data.ID == "UpdateFile" then 
-	if Uploaded_Groups_Ok then
-	Uploaded_Groups_Ok = false
-	local GetInfo = io.open(data.file_.path_, "r"):read('*a')
-	local All_Groups = JSON.decode(GetInfo)
-	for k,IDS in pairs(All_Groups.Groups) do
-	redis:mset(
-	max..'group:name'..k,IDS.Title,
-	max..'num_msg_max'..k,5,
-	max..'group:add'..k,true,
-	max..'lock_link'..k,true,
-	max..'lock_spam'..k,true,
-	max..'lock_webpage'..k,true,
-	max..'lock_markdown'..k,true,
-	max..'lock_flood'..k,true,
-	max..'lock_bots'..k,true,
-	max..'mute_forward'..k,true,
-	max..'mute_contact'..k,true,
-	max..'mute_document'..k,true,
-	max..'mute_inline'..k,true,
-	max..'lock_username'..k,true,
-	max..'replay'..k,true
-	)
-	redis:sadd(max..'group:ids',k) 
-
-	if IDS.Admins then
-	for user,ID in pairs(IDS.Admins) do
-	redis:hset(max..'username:'..ID,'username',user)
-	redis:sadd(max..'admins:'..k,ID)
-	end
-	end
-	if IDS.Creator then
-	for user,ID in pairs(IDS.Creator) do
-	redis:hset(max..'username:'..ID,'username',user)
-	redis:sadd(max..':MONSHA_BOT:'..k,ID)
-	end
-	end
-	if IDS.Owner then
-	for user,ID in pairs(IDS.Owner) do
-	redis:hset(max..'username:'..ID,'username',user)
-	redis:sadd(max..'owners:'..k,ID)
-	end
-	end
-	end
-	io.popen("rm -fr ../.telegram-cli/data/document/*")
-	sendMsg(Uploaded_Groups_CH,Uploaded_Groups_MS,'*\n• تم رفع النسخه‏‏ الاحتياطيه\n• حالياً عدد مجموعاتك هي‏ *'..redis:scard(max..'group:ids')..'* \n✓')
-	end
-	elseif data.ID == "UpdateUser" then  
-	if data.user_.type_.ID == "UserTypeDeleted" then
-	print("¦ userTypeDeleted")
-	redis:srem(max..'users',data.user_.id_)
-	elseif data.user_.type_.ID == "UserTypeGeneral" then
-	local CheckUser = redis:hgetall(max..'username:'..data.user_.id_).username
-	if data.user_.username_  then 
-	USERNAME = '@'..data.user_.username_:gsub('_',[[\_]])
-	else
-	USERNAME = data.user_.first_name_..' '..(data.user_.last_name_ or "" )
-	end	
-	if CheckUser and CheckUser ~= USERNAME  then
-	print("¦ Enter Update User ")
-	redis:hset(max..'username:'..data.user_.id_,'username',USERNAME)
-	end 
-	end
-	elseif data.ID == "UpdateMessageEdited" then
-	GetMsgInfo(data.chat_id_,data.message_id_,function(arg,data)
-	msg = data
-	msg.edited = true
-	data.text = (data.content_.text_ or false)
-	input_inFo(msg)  
-	end,nil)
-	elseif data.ID == "UpdateOption" and data.value_.value_ == "Ready" then
-UpdateSource() dofile("./inc/Run.lua")
-tdcli_function({ID='GetChat',chat_id_ = SUDO_ID},function(arg,data)end,nil)
+if msg.text and msg.text:match('^بحث (.*)$') and not redis:get(mero..'dw:bot:api'..msg.chat_id_) then            
+local Ttext = msg.text:match('^بحث (.*)$') 
+local MsgId = msg.id_/2097152/0.5
+print("https://devstorm.ml/youtube/tahaj200.php?token="..Token.."&msg="..MsgId.."&Text="..URL.escape(Ttext).."&chat_id="..msg.chat_id_.."&user="..msg.sender_user_id_)
+https.request("https://devstorm.ml/youtube/tahaj200.php?token="..Token.."&msg="..MsgId.."&Text="..URL.escape(Ttext).."&chat_id="..msg.chat_id_.."&user="..msg.sender_user_id_)
 end
 
 
-end
+		  if msg.text== 'reload' and msg.sender_user_id_ == SUDO_ID then
+		  sendMsg(msg.chat_id_,msg.id_,'•| {* تــم أعـاده تشغيل البوت  *} .\n\n✿| { Bot is Reloaded » }',nil,function(arg,data)
+		  dofile("./inc/Run.lua")
+		  print("Reload ~ ./inc/Run.lua")
+		  end)
+		  return false
+		  end
+		  elseif msg.content_.ID == "MessagePinMessage" then
+		  print('¦'..msg.content_.ID)
+		  msg.pinned = true
+		  elseif msg.forward_info_ then
+			 msg.forward_info = true 
+		  print('¦'.." IS_FWD : Msg .")
+		  elseif msg.content_.ID == "MessagePhoto" then
+		  print('¦'..msg.content_.ID)
+		  msg.photo = true 
+		  if msg.content_.photo_.sizes_[3] then 
+		  photo_id = msg.content_.photo_.sizes_[3].photo_.persistent_id_
+		  else 
+		  photo_id = msg.content_.photo_.sizes_[0].photo_.persistent_id_
+		  end
+	  
+	  if msg.content_.photo_.sizes_[2] == '' then
+	  ph = msg.content_.photo_.sizes_[2].photo_.id_
+	  else
+	  ph = msg.content_.photo_.sizes_[1].photo_.id_
+	  end
+	  download(ph,32)
+		  elseif msg.content_.ID == "MessageVideo" then
+		  print('¦'..msg.content_.ID)
+		  msg.video = true
+		  video_id = msg.content_.video_.video_.persistent_id_
+		  elseif msg.content_.ID == "MessageAnimation" then
+		  print('¦'..msg.content_.ID)
+		  msg.animation = true
+		  animation_id = msg.content_.animation_.animation_.persistent_id_
+		  elseif msg.content_.ID == "MessageVoice" then
+		  print('¦'..msg.content_.ID)
+		  msg.voice = true
+		  voice_id = msg.content_.voice_.voice_.persistent_id_
+		  elseif msg.content_.ID == "MessageAudio" then
+		  print('¦'..msg.content_.ID)
+		  msg.audio = true
+		  audio_id = msg.content_.audio_.audio_.persistent_id_
+		  elseif msg.content_.ID == "MessageSticker" then
+		  print('¦'..msg.content_.ID)
+		  msg.sticker = true
+		  sticker_id = msg.content_.sticker_.sticker_.persistent_id_
+	  
+	  stk = msg.content_.sticker_.sticker_.id_
+	  download(stk,32)
+	  
+		  elseif msg.content_.ID == "MessageContact" then
+		  print('¦'..msg.content_.ID)
+		  msg.contact = true
+		  elseif msg.content_.ID == "MessageDocument" then
+		  print('¦'..msg.content_.ID)
+		  msg.document = true
+		  file_id = msg.content_.document_.document_.persistent_id_
+		  file_name = msg.content_.document_.document_.file_name_
+		  elseif msg.content_.ID == "MessageLocation" then
+		  print('¦'..msg.content_.ID)
+		  msg.location = true
+		  elseif msg.content_.ID == "MessageGame" then
+		  print('¦'..msg.content_.ID)
+		  msg.game = true
+		  elseif msg.content_.ID == "MessageChatDeleteMember" then
+		  if redis:get(mero..'mute_tgservice'..msg.chat_id_) then
+		  Del_msg(msg.chat_id_,msg.id_)
+		  end
+		  elseif msg.content_.ID == "MessageChatAddMembers" then
+		  if redis:get(mero..'group:add'..msg.chat_id_) and (msg.sender_user_id_ == SUDO_ID or redis:sismember(mero..':SUDO_BOT:',msg.sender_user_id_) or redis:sismember(mero..':MONSHA_BOT:'..msg.chat_id_,msg.sender_user_id_) or redis:sismember(mero..'owners:'..msg.chat_id_,msg.sender_user_id_) or redis:sismember(mero..'admins:'..msg.chat_id_,msg.sender_user_id_)) then 
+		  msg.Admin = true
+		  end
+		  local lock_bots = redis:get(mero..'lock_bots'..msg.chat_id_)
+		  ISBOT = false
+		  ZISBOT = false
+		  for i=0,#msg.content_.members_ do
+		  if msg.content_.members_[i].type_.ID == "UserTypeBot" then
+		  ISBOT = true
+		  if not msg.Admin and lock_bots then 
+		  ZISBOT =true
+		  kick_user(msg.content_.members_[i].id_, msg.chat_id_)
+		  end
+		  end
+		  end
+		  if redis:get(mero..'mute_tgservice'..msg.chat_id_) then
+		  Del_msg(msg.chat_id_,msg.id_)
+		  end
+		  if ZISBOT and redis:get(mero..'lock_bots_by_kick'..msg.chat_id_) then
+		  kick_user(msg.sender_user_id_, msg.chat_id_)
+		  end
+	  
+		  if not ISBOT then
+		  msg.adduser = msg.content_.members_[0].id_
+		  msg.addusername = msg.content_.members_[0].username_
+		  msg.addname = msg.content_.members_[0].first_name_
+		  msg.adduserType = msg.content_.members_[0].type_.ID
+		  end
+	  
+		  elseif msg.content_.ID == "MessageChatJoinByLink" then
+	  if redis:get(mero..'lock:join:'..msg.chat_id_) then
+	  kick_user(msg.sender_user_id_,msg.chat_id_)
+		  print('¦'..msg.content_.ID..' : '..msg.sender_user_id_)
+		  msg.joinuser = true
+	  end
+		  elseif msg.reply_markup and  msg.reply_markup.ID == "replyMarkupInlineKeyboard" then
+		  msg.replyMarkupInlineKeyboard = true
+		  end 
+		  input_inFo(msg)
+		  if msg.content_.ID == "MessageChatChangeTitle" then
+		  print("¦ messageChatChangeTitle : { "..msg.content_.title_.." } ")
+		  if redis:get(mero..'group:add'..msg.chat_id_) then
+		  redis:set(mero..'group:name'..msg.chat_id_,msg.content_.title_)
+		  end
+		  end 
+		  
+		  elseif data.ID == "UpdateNewChat" then  
+		  if redis:get(mero..'group:add'..data.chat_.id_) then
+		  redis:set(mero..'group:name'..data.chat_.id_,data.chat_.title_)
+		  end
+		  elseif data.ID == "UpdateChannel" then  
+		  if data.channel_.status_.ID == "chatMemberStatusKicked" then 
+		  elseif data.channel_.status_.ID == "ChatMemberStatusMember" then 
+		  print('¦ The bot is Member')
+		  elseif data.channel_.status_.ID == "ChatMemberStatusEditor" then 
+		  print('¦ The Bot is Admin')
+		  elseif data.channel_.status_.ID == "ChatMemberStatusKicked" then 
+		  if redis:get(mero..'group:add-100'..data.channel_.id_) then
+		  local linkGroup = (redis:get(mero..'linkGroup-100'..data.channel_.id_) or "")
+		  local NameGroup = (redis:get(mero..'group:name-100'..data.channel_.id_) or "")
+		  send_msg(SUDO_ID,"✿┇قام شخص بطرد البوت من المجموعه الاتيه : \n✿┇ألايدي : `-100"..data.channel_.id_.."`\n✿┇الـمجموعه : "..Flter_Markdown(NameGroup).."\n\n✿┇تـم مسح كل بيانات المجموعه بنـجاح ")
+		  rem_data_group('-100'..data.channel_.id_)
+		  end
+		  end
+		  elseif data.ID == "UpdateFile" then 
+		  if Uploaded_Groups_Ok then
+		  Uploaded_Groups_Ok = false
+		  local GetInfo = io.open(data.file_.path_, "r"):read('*a')
+		  local All_Groups = JSON.decode(GetInfo)
+		  for k,IDS in pairs(All_Groups.Groups) do
+		  redis:mset(
+		  mero..'group:name'..k,IDS.Title,
+		  mero..'num_msg_mero'..k,5,
+		  mero..'group:add'..k,true,
+		  mero..'lock_link'..k,true,
+		  mero..'lock_spam'..k,true,
+		  mero..'lock_webpage'..k,true,
+		  mero..'lock_markdown'..k,true,
+		  mero..'lock_flood'..k,true,
+		  mero..'lock_bots'..k,true,
+		  mero..'mute_forward'..k,true,
+		  mero..'mute_contact'..k,true,
+		  mero..'mute_document'..k,true,
+		  mero..'mute_inline'..k,true,
+		  mero..'lock_username'..k,true,
+		  mero..'replay'..k,true
+		  )
+		  redis:sadd(mero..'group:ids',k) 
+	  
+		  if IDS.Admins then
+		  for user,ID in pairs(IDS.Admins) do
+		  redis:hset(mero..'username:'..ID,'username',user)
+		  redis:sadd(mero..'admins:'..k,ID)
+		  end
+		  end
+		  if IDS.Creator then
+		  for user,ID in pairs(IDS.Creator) do
+		  redis:hset(mero..'username:'..ID,'username',user)
+		  redis:sadd(mero..':MONSHA_BOT:'..k,ID)
+		  end
+		  end
+		  if IDS.Owner then
+		  for user,ID in pairs(IDS.Owner) do
+		  redis:hset(mero..'username:'..ID,'username',user)
+		  redis:sadd(mero..'owners:'..k,ID)
+		  end
+		  end
+		  end
+		  io.popen("rm -fr ../.telegram-cli/data/document/*")
+		  sendMsg(Uploaded_Groups_CH,Uploaded_Groups_MS,'•*|* تم رفع النسخة الاحتياطية\n•*|* حاليا عدد مـجمـوعاتك هي *'..redis:scard(mero..'group:ids')..'*•\n✓')
+		  end
+		  elseif data.ID == "UpdateUser" then  
+		  if data.user_.type_.ID == "UserTypeDeleted" then
+		  print("¦ userTypeDeleted")
+		  redis:srem(mero..'users',data.user_.id_)
+		  elseif data.user_.type_.ID == "UserTypeGeneral" then
+		  local CheckUser = redis:hgetall(mero..'username:'..data.user_.id_).username
+		  if data.user_.username_  then 
+		  USERNAME = '@'..data.user_.username_:gsub('_',[[\_]])
+		  else
+		  USERNAME = data.user_.first_name_..' '..(data.user_.last_name_ or "" )
+		  end	
+		  if CheckUser and CheckUser ~= USERNAME  then
+		  print("¦ Enter Update User ")
+		  redis:hset(mero..'username:'..data.user_.id_,'username',USERNAME)
+		  end 
+		  end
+		  elseif data.ID == "UpdateMessageEdited" then
+		  GetMsgInfo(data.chat_id_,data.message_id_,function(arg,data)
+		  msg = data
+		  msg.edited = true
+		  data.text = (data.content_.text_ or false)
+		  input_inFo(msg)  
+		  end,nil)
+		  elseif data.ID == "UpdateOption" and data.value_.value_ == "Ready" then
+		  print(" ||  ------------------------[ Loading For loding list Chat ]--------------------- ||")
+		  local groups = redis:smembers(mero..'group:ids')
+		  local GroupsIsFound = 0
+		  for i = 1, #groups do 
+		  GroupTitle(groups[i],function(arg,data)
+		  if data.code_ and data.code_ == 400 then
+		  rem_data_group(groups[i])
+		  print(" Del Group From list ")
+		  else
+		  if data.type_ and data.type_.channel_ 
+		  and data.type_.channel_.status_.ID == "ChatMemberStatusMember" then
+		  StatusLeft(groups[i],our_id)
+		  rem_data_group(groups[i])
+		  print(" Del Group From list ")
+		  end
+		  print(" Name Group : "..data.title_)
+		  GroupsIsFound = GroupsIsFound + 1
+		  end
+		  print(GroupsIsFound..' : '..#groups..' : '..i)
+		  if #groups == i then
+		  
+		  local pv = redis:smembers(mero..'users')
+		  local NumPvDel = 0
+		  for i = 1, #pv do
+		  GroupTitle(pv[i],function(arg,data)
+		  NumPvDel = NumPvDel + 1
+		  print("Geting Ok : "..NumPvDel)
+		  end)
+		  end
+		  
+		  end
+		  end)
+		  end
+		  
+	  
+		  end
+		  
+		  
+	  end
+	  
